@@ -17,6 +17,11 @@ final class Controls {
         return context.getSharedPreferences("button_map", Context.MODE_PRIVATE);
     }
 
+    static boolean batteryReady(Context context) {
+        android.os.PowerManager power = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        return power != null && power.isIgnoringBatteryOptimizations(context.getPackageName());
+    }
+
     static String prefix(int slot) { return "button_" + slot + "_"; }
 
     static boolean isLearned(SharedPreferences p, int slot) {

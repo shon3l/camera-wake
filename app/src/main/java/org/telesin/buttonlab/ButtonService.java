@@ -43,7 +43,12 @@ public final class ButtonService extends AccessibilityService {
         @Override public void onReceive(Context context, Intent intent) {
             if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())
                     && Controls.pref(ButtonService.this).getBoolean("camera_on_wake", false)) {
-                requestWakeCamera("Screen wake (armed test mode)");
+                if (!Controls.batteryReady(ButtonService.this)) {
+                    Controls.pref(ButtonService.this).edit().putString("wake_status",
+                        "Paused: disable battery optimization in required setup.").apply();
+                    return;
+                }
+                requestWakeCamera("Screen wake");
             }
         }
     };

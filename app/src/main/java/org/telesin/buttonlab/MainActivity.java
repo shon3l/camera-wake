@@ -29,6 +29,10 @@ import android.widget.Toast;
 public final class MainActivity extends Activity {
     private final Handler ui = new Handler(Looper.getMainLooper());
     private TextView status;
+    private TextView batteryStatus;
+    private TextView readyStatus;
+    private Button listenerButton;
+    private Button batteryButton;
     private TextView lastKey;
     private final TextView[] slotStatuses = new TextView[Controls.SLOTS.length];
     private final Spinner[] actionSpinners = new Spinner[Controls.SLOTS.length];
@@ -77,22 +81,35 @@ public final class MainActivity extends Activity {
         addText(heroText, "TELESIN · Xiaomi 17 Ultra");
         hero.addView(heroText, new LinearLayout.LayoutParams(0, -2, 1));
         layout.addView(hero);
+        LinearLayout setup = card(layout);
+        heading(setup, "Required setup", 19);
+        addText(setup, "Pair TELESIN_SDC in Bluetooth, then complete both checks.");
+        status = addText(setup, "1 · Accessibility listener");
+        listenerButton = button(setup, "Enable listener", () -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        batteryStatus = addText(setup, "2 · Battery optimization");
+        batteryButton = button(setup, "Disable battery optimization", this::requestBatteryExemption);
+
         LinearLayout test = card(layout);
-        heading(test, "Your M1 camera shortcut", 19);
-        addText(test, "1  Connect TELESIN_SDC in Bluetooth settings.\n2  Turn on the listener and camera wake below.\n3  Screen off? Hold M1 to open the camera. Press M1 again to turn the screen off.");
-        addText(test, "Confirmed with your M1 button. While armed, other screen wakes can open the camera too. Turn this off when you finish using the case.");
+        heading(test, "M1 camera shortcut", 19);
+        readyStatus = addText(test, "Checking setup…");
+        addText(test, "Hold M1 → open camera from screen off.\nPress M1 again → screen off.");
+        addText(test, "Other screen wakes can open Camera while enabled. Turn off after case use.");
         wakeSwitch = new android.widget.Switch(this);
         wakeSwitch.setText("Enable M1 camera wake");
         wakeSwitch.setTextSize(14);
         wakeSwitch.setMinHeight(dp(48));
         wakeSwitch.setChecked(prefs.getBoolean("camera_on_wake", false));
         wakeSwitch.setOnCheckedChangeListener((buttonView, checked) -> {
+            if (checked && (ButtonService.instance == null || !Controls.batteryReady(this))) {
+                wakeSwitch.setChecked(false);
+                Toast.makeText(this, "Complete both required setup steps first", Toast.LENGTH_LONG).show();
+                return;
+            }
             prefs.edit().putBoolean("camera_on_wake", checked).apply();
-            if (checked && ButtonService.instance == null) Toast.makeText(this, "Enable the Accessibility listener first", Toast.LENGTH_LONG).show();
         });
         test.addView(wakeSwitch);
         button(test, "Test camera launch now", this::openCameraIntentTest);
-        addText(test, "No button learning is needed for this M1 shortcut.");
+
         LinearLayout guide = card(layout);
         heading(guide, "Know your buttons", 19);
         android.widget.ImageView controller = new android.widget.ImageView(this);
@@ -103,13 +120,9 @@ public final class MainActivity extends Activity {
         guide.addView(controller, new LinearLayout.LayoutParams(-1, -2));
         addText(guide, "M1 = ◀M  ·  M2 = M▶  ·  W = wide  ·  T = tele");
         addText(guide, "Product button guide · TELESIN P4-WTP-06");
-        LinearLayout setup = card(layout);
-        heading(setup, "Listener & setup", 19);
-        status = addText(setup, "Listener: unknown");
-        button(setup, "Open Accessibility settings", () -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
-        addText(setup, "Turn on TELESIN Button Lab in Accessibility. If blocked, allow restricted settings in the app’s system info. Return here when enabled.");
-
-        LinearLayout diagnostics = expandable(setup, "Diagnostics & resets");
+        LinearLayout diagnostics = expandable(layout, "Diagnostics & resets");
+        heading(diagnostics, "Setup help", 19);
+        addText(diagnostics, "If HyperOS blocks the listener, allow restricted settings in App info. Also set Battery saver to No restrictions. After an update, check that the listener is still enabled.");
         heading(diagnostics, "Button diagnostics", 19);
         addText(diagnostics, "Press a remote button to check detection. Use Learn in a button card below to assign it.");
         lastKey = addText(diagnostics, "Last event: none");
@@ -175,7 +188,7 @@ public final class MainActivity extends Activity {
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
         });
         button(advanced, "Open Xiaomi Camera", this::openCamera);
-        addText(layout, "Camera Wake 1.0 · Independent companion app\nNo Internet access · Everything stays on this phone.");
+        addText(layout, "Camera Wake 1.1 · No Internet access");
         updateLabels();
     }
 
@@ -228,6 +241,15 @@ public final class MainActivity extends Activity {
             service.pickTapPosition(idx);
             openCamera();
         });
+    }
+
+    private void requestBatteryExemption() {
+        Intent request = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            android.net.Uri.parse("package:" + getPackageName()));
+        try { startActivity(request); }
+        catch (RuntimeException unavailable) {
+            startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        }
     }
 
     private void cancelRuntime() {
@@ -321,7 +343,7 @@ public final class MainActivity extends Activity {
         parent.addView(t);
     }
 
-    private void button(LinearLayout parent, String title, Runnable action) {
+    private Button button(LinearLayout parent, String title, Runnable action) {
         Button b = new Button(this);
         b.setText(title);
         b.setAllCaps(false);
@@ -334,6 +356,7 @@ public final class MainActivity extends Activity {
         b.setLayoutParams(params);
         parent.addView(b);
         b.setOnClickListener(v -> action.run());
+        return b;
     }
 
     private LinearLayout expandable(LinearLayout parent, String title) {
@@ -366,7 +389,16 @@ public final class MainActivity extends Activity {
     private void updateLabels() {
         if (status == null) return;
         boolean active = ButtonService.instance != null;
-        status.setText(active ? "● Listener active · ready to learn" : "● Listener off · enable below");
+        boolean battery = Controls.batteryReady(this);
+        boolean ready = active && battery;
+        status.setText(active ? "✓ Accessibility listener on" : "1 · Accessibility listener required");
+        batteryStatus.setText(battery ? "✓ Battery optimization off" : "2 · Disable battery optimization");
+        batteryStatus.setTextColor(battery ? 0xff166534 : 0xff92400e);
+        listenerButton.setVisibility(active ? View.GONE : View.VISIBLE);
+        batteryButton.setVisibility(battery ? View.GONE : View.VISIBLE);
+        readyStatus.setText(ready ? "● Ready" : "● Paused · complete required setup");
+        readyStatus.setTextColor(ready ? 0xff166534 : 0xff92400e);
+        wakeSwitch.setEnabled(ready || wakeSwitch.isChecked());
         status.setTextColor(active ? 0xff166534 : 0xff92400e);
         status.setTypeface(null, android.graphics.Typeface.BOLD);
         String last = prefs.getString("last_event", "No key detected yet");
