@@ -4,7 +4,8 @@ Free, open-source Android companion for the **TELESIN P4-WTP-06** underwater pho
 
 ## App screenshot
 
-<img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake on Xiaomi 17 Ultra, showing the M1 wake control and product-photo controller guide" width="360" />
+<img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake on Xiaomi 17 Ultra, showing the M1 wake control and product-photo controller guide" width="320" />
+<img src="docs/screenshots/button-guide.png" alt="Camera Wake 1.0.2 with the restored original TELESIN product-photo button guide" width="320" />
 
 Captured from the tested Xiaomi 17 Ultra; the product-photo layout is restored in Camera Wake 1.0.2.
 
