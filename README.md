@@ -2,6 +2,12 @@
 
 Free, open-source Android companion for the **TELESIN P4-WTP-06** underwater phone case. Open Xiaomi Camera from a screen-off, locked phone using the case’s **M1** button. No root or jailbreak.
 
+## App screenshot
+
+<img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake on Xiaomi 17 Ultra, showing the M1 wake control and illustrated controller guide" width="360" />
+
+Captured from the tested Xiaomi 17 Ultra running Camera Wake 1.0.1.
+
 ## Tested phone
 
 **Xiaomi 17 Ultra**, model **2512BPNDAG**, running **Android 17 / HyperOS OS3.0.336.0.XPAEUXM**, with a **TELESIN P4-WTP-06 / TELESIN_SDC** controller. Tested on 12 October 2026.
