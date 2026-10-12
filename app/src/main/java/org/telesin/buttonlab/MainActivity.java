@@ -95,9 +95,14 @@ public final class MainActivity extends Activity {
         addText(test, "No button learning is needed for this M1 shortcut.");
         LinearLayout guide = card(layout);
         heading(guide, "Know your buttons", 19);
-        guide.addView(new ControllerGuide(this), new LinearLayout.LayoutParams(-1, -2));
+        android.widget.ImageView controller = new android.widget.ImageView(this);
+        controller.setImageResource(R.drawable.controller_reference);
+        controller.setAdjustViewBounds(true);
+        controller.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        controller.setContentDescription("TELESIN product photo identifying Capture, M1, M2, W and T buttons");
+        guide.addView(controller, new LinearLayout.LayoutParams(-1, -2));
         addText(guide, "M1 = ◀M  ·  M2 = M▶  ·  W = wide  ·  T = tele");
-        addText(guide, "Illustrated guide · TELESIN P4-WTP-06");
+        addText(guide, "Product button guide · TELESIN P4-WTP-06");
         LinearLayout setup = card(layout);
         heading(setup, "Listener & setup", 19);
         status = addText(setup, "Listener: unknown");

@@ -4,9 +4,9 @@ Free, open-source Android companion for the **TELESIN P4-WTP-06** underwater pho
 
 ## App screenshot
 
-<img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake on Xiaomi 17 Ultra, showing the M1 wake control and illustrated controller guide" width="360" />
+<img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake on Xiaomi 17 Ultra, showing the M1 wake control and product-photo controller guide" width="360" />
 
-Captured from the tested Xiaomi 17 Ultra running Camera Wake 1.0.1.
+Captured from the tested Xiaomi 17 Ultra; the product-photo layout is restored in Camera Wake 1.0.2.
 
 ## Tested phone
 
@@ -21,7 +21,7 @@ Other phones, firmware versions and controllers have not been validated. The app
 
 ## Download and install
 
-Download **Camera-Wake-1.0.1.apk** from this repository’s **Releases** page. It is free, with no subscription, ads, accounts or in-app purchases.
+Download **Camera-Wake-1.0.2.apk** from this repository’s **Releases** page. It is free, with no subscription, ads, accounts or in-app purchases.
 
 1. Transfer the APK to the phone and open it. Android may ask you to allow installation from the app you used to open the file.
 2. Open **Camera Wake**.
@@ -35,7 +35,7 @@ Download **Camera-Wake-1.0.1.apk** from this repository’s **Releases** page. I
 For ADB installation:
 
 ```sh
-adb install -r Camera-Wake-1.0.1.apk
+adb install -r Camera-Wake-1.0.2.apk
 adb shell am start -n org.telesin.buttonlab/.MainActivity
 ```
 
@@ -47,7 +47,7 @@ There is no root, firmware modification, password bypass or private-gallery acce
 
 ## Button guide and advanced features
 
-An original illustrated guide identifies Capture, M1, M2, W and T. The app includes:
+A product-photo guide identifies Capture, M1, M2, W and T. The app includes:
 
 - Separate short-press and long-press actions for ordinary learned external keys.
 - Adjustable hold duration, pass-through, ignore, calibrated camera taps and swipes.
@@ -88,10 +88,10 @@ GitHub Actions builds the app and uploads the APK as a free workflow artifact on
 - Gradle build and Android lint pass.
 - The APK was installed and the UI inspected on the tested Xiaomi.
 - The owner verified the M1 screen-off → camera → screen-off flow.
-- Version 1.0.1 adds freely licensed original artwork while preserving the working camera behavior.
+- Version 1.0.2 restores the original product-photo button guide while preserving the working camera behavior.
 
 ## License and attribution
 
-Code and original bundled artwork are licensed under **MIT**. The Gradle wrapper retains its upstream license notices. TELESIN and Xiaomi names identify compatible hardware; this project is independent and is not endorsed by either company.
+Code and the custom camera-and-wave logo are licensed under **MIT**. The third-party product photograph is excluded from the MIT license; its rights remain with its owner. The Gradle wrapper retains its upstream license notices. TELESIN and Xiaomi names identify compatible hardware; this project is independent and is not endorsed by either company.
 
-The controller diagram was informed by public P4-WTP-06 product references. No retailer photograph is bundled.
+Product photo source: [Kareem Stores TELESIN P4-WTP-06 listing](https://kareemstores.com/en/telesin-smartphone-diving-case-with-remote-control-p4-wtp-06-1773945903). The photograph is used as a hardware button reference.
