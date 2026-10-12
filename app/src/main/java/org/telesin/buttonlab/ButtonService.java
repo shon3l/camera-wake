@@ -119,7 +119,12 @@ public final class ButtonService extends AccessibilityService {
         InputDevice device = event.getDevice();
         // Log only while this app is foreground or the user explicitly requested learning.
         int learning = p.getInt("learning_slot", -1);
-        boolean diagnostic = learning >= 0 || isLabForeground();
+        boolean labForeground = isLabForeground();
+        if (learning >= 0 && (!labForeground || System.currentTimeMillis() >= p.getLong("learning_deadline", 0))) {
+            p.edit().remove("learning_slot").remove("learning_deadline").apply();
+            learning = -1;
+        }
+        boolean diagnostic = labForeground;
         if (diagnostic && event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0
                 && device != null && device.isExternal()) {
             p.edit().putString("last_event", Controls.details(event)).apply();

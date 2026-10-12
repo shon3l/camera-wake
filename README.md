@@ -13,7 +13,7 @@ Free Android companion for **TELESIN P4-WTP-06**. Hold **M1** to open Xiaomi Cam
 3. When setup shows **Ready**, enable **M1 camera wake**.
 4. Screen off → hold M1 → Camera opens. Press M1 again → screen off.
 
-Both setup checks are required. After updates, check the listener is still enabled. No key learning is needed. Turn camera wake off after case use: **any screen wake can open Camera while enabled**.
+Both setup checks are required. After updates, check the listener is still enabled. No key learning is needed. Button settings show M1/M2 first. Restore defaults keeps learned keys and M1 wake while restoring native actions. Turn camera wake off after case use: **any screen wake can open Camera while enabled**.
 
 **Tested:** Xiaomi 17 Ultra (2512BPNDAG), Android 17 / HyperOS OS3.0.336.0.XPAEUXM, TELESIN P4-WTP-06. Other devices are unverified.
 

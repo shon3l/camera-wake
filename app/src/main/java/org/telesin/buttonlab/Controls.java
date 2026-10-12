@@ -17,6 +17,21 @@ final class Controls {
         return context.getSharedPreferences("button_map", Context.MODE_PRIVATE);
     }
 
+    static final int[] DISPLAY_ORDER = {3, 4, 0, 1, 2};
+
+    static void restoreDefaults(Context context, int slot) {
+        SharedPreferences p = pref(context);
+        SharedPreferences.Editor edit = p.edit();
+        for (int i = 0; i < SLOTS.length; i++) {
+            if (slot >= 0 && i != slot) continue;
+            String pre = prefix(i);
+            for (String key : new String[]{"action", "long_action", "x", "y", "orientation"}) edit.remove(pre + key);
+        }
+        edit.remove("learning_slot").remove("learning_deadline");
+        if (slot < 0) edit.putInt("hold_millis", 700).putString("camera_package", "com.android.camera");
+        edit.apply();
+    }
+
     static boolean batteryReady(Context context) {
         android.os.PowerManager power = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
         return power != null && power.isIgnoringBatteryOptimizations(context.getPackageName());
@@ -59,7 +74,7 @@ final class Controls {
             .putInt(prefix(slot) + "scan", e.getScanCode())
             .putString(prefix(slot) + "descriptor", descriptor(e))
             .putString(prefix(slot) + "device", desc(e))
-            .remove("learning_slot")
+            .remove("learning_slot").remove("learning_deadline")
             .putString("last_event", "Learned " + SLOTS[slot] + ": " + details(e) + other)
             .apply();
     }

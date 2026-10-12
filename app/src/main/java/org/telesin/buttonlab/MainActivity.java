@@ -131,26 +131,26 @@ public final class MainActivity extends Activity {
             prefs.edit().remove("last_event").remove("wake_status").apply();
             updateLabels();
         });
-        button(diagnostics, "Reset all app settings", () -> new android.app.AlertDialog.Builder(this)
-            .setTitle("Reset all settings?")
-            .setMessage("Clears all learned buttons, short and long actions, tap positions, and diagnostics. Restores the camera package and hold duration. Bluetooth pairing and the enabled listener stay as they are.")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Reset all", (dialog, which) -> {
-                cancelRuntime();
-                prefs.edit().clear().apply();
-                syncActionSelectors();
-                holdSpinner.setSelection(1);
-                wakeSwitch.setChecked(false);
-                cameraPackageField.setText("com.android.camera");
-                updateLabels();
-                Toast.makeText(this, "All app settings reset", Toast.LENGTH_SHORT).show();
-            }).show());
         button(diagnostics, "Cancel pending Learn", () -> {
             prefs.edit().remove("learning_slot").apply();
             updateLabels();
         });
 
-        LinearLayout mappings = expandable(layout, "Advanced button actions");
+        LinearLayout mappings = expandable(layout, "Buttons · M1, M2, Capture, W, T");
+        button(mappings, "Restore default button actions", () -> new android.app.AlertDialog.Builder(this)
+            .setTitle("Restore defaults?")
+            .setMessage("Restores native pass-through actions and clears tap positions. Keeps learned keys, M1 camera wake and system permissions.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Restore defaults", (dialog, which) -> {
+                cancelRuntime();
+                Controls.restoreDefaults(this, -1);
+                syncActionSelectors();
+                holdSpinner.setSelection(1);
+
+                cameraPackageField.setText("com.android.camera");
+                updateLabels();
+                Toast.makeText(this, "Native button defaults restored", Toast.LENGTH_SHORT).show();
+            }).show());
         heading(mappings, "Short & long press actions", 19);
         addText(mappings, "PASS keeps native behavior. IGNORE/TAP/SWIPE operate only in Xiaomi Camera. The final action, LAUNCH CAMERA, tries to wake and open the secure camera from anywhere. It works only if Android delivers the external key while screen-off AND HyperOS permits the activity launch. It cannot emulate double Power, unlock the phone, or force these permissions.");
         addText(mappings, "These mappings are for ordinary key events only. M1 camera wake above works separately. Learn a key before selecting actions; some mode buttons send gestures or Power pulses instead.");
@@ -170,7 +170,7 @@ public final class MainActivity extends Activity {
             @Override public void onNothingSelected(AdapterView<?> parent) { }
         });
         mappings.addView(hold);
-        for (int i = 0; i < Controls.SLOTS.length; i++) addSlot(mappings, i);
+        for (int i : Controls.DISPLAY_ORDER) addSlot(mappings, i);
 
         LinearLayout advanced = expandable(layout, "Camera & calibration settings");
         heading(advanced, "Camera & calibration", 19);
@@ -197,12 +197,12 @@ public final class MainActivity extends Activity {
         heading(layout, Controls.SLOTS[idx], 17);
         button(layout, "Reset " + Controls.SLOTS[idx] + "…", () -> new android.app.AlertDialog.Builder(this)
             .setTitle("Reset " + Controls.SLOTS[idx])
-            .setItems(new String[]{"Forget learned key", "Reset short & long actions", "Clear tap position", "Reset this button completely"},
+            .setItems(new String[]{"Forget learned key", "Reset short & long actions", "Clear tap position", "Restore this button’s defaults"},
                 (dialog, which) -> resetButton(idx, which))
             .setNegativeButton("Cancel", null).show());
         slotStatuses[idx] = addText(layout, "Not learned");
         button(layout, "Learn " + Controls.SLOTS[idx], () -> {
-            prefs.edit().putInt("learning_slot", idx).putString("last_event", "Waiting for " + Controls.SLOTS[idx] + " button. Press it now.").apply();
+            prefs.edit().putInt("learning_slot", idx).putLong("learning_deadline", System.currentTimeMillis() + 15000).putString("last_event", "Waiting for " + Controls.SLOTS[idx] + " button. Press it now (15 seconds).").apply();
             updateLabels();
         });
         addText(layout, "Short press action");
@@ -233,6 +233,7 @@ public final class MainActivity extends Activity {
         layout.addView(longSelect);
         longSpinners[idx] = longSelect;
         button(layout, "Pick camera control · " + Controls.SLOTS[idx], () -> {
+            prefs.edit().remove("learning_slot").remove("learning_deadline").apply();
             ButtonService service = ButtonService.instance;
             if (service == null) {
                 Toast.makeText(this, "Enable accessibility listener first", Toast.LENGTH_LONG).show();
@@ -266,6 +267,13 @@ public final class MainActivity extends Activity {
 
     private void resetButton(int slot, int choice) {
         cancelRuntime();
+        if (choice == 3) {
+            Controls.restoreDefaults(this, slot);
+            syncActionSelectors();
+            updateLabels();
+            Toast.makeText(this, "Native actions restored for " + Controls.SLOTS[slot], Toast.LENGTH_SHORT).show();
+            return;
+        }
         String prefix = Controls.prefix(slot);
         SharedPreferences.Editor edit = prefs.edit();
         if (choice == 0 || choice == 3) {
@@ -403,6 +411,10 @@ public final class MainActivity extends Activity {
         status.setTypeface(null, android.graphics.Typeface.BOLD);
         String last = prefs.getString("last_event", "No key detected yet");
         int pending = prefs.getInt("learning_slot", -1);
+        if (pending >= 0 && System.currentTimeMillis() >= prefs.getLong("learning_deadline", 0)) {
+            prefs.edit().remove("learning_slot").remove("learning_deadline").apply();
+            pending = -1;
+        }
         if (pending >= 0 && pending < Controls.SLOTS.length) last += "\nWaiting for: " + Controls.SLOTS[pending];
         lastKey.setText("Last event: " + last + "\nCamera wake: "
                 + prefs.getString("wake_status", "No wake request received yet"));
@@ -457,6 +469,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onPause() {
         ui.removeCallbacks(ticker);
+        prefs.edit().remove("learning_slot").remove("learning_deadline").apply();
         super.onPause();
     }
 }
