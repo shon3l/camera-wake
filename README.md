@@ -16,7 +16,7 @@ Samsung keeps its native controls; Xiaomi gets the mode/zoom compatibility fix. 
 
 **Activate again after reboot or stopping the helper.** Accessibility is not required. Reset to defaults and Stop are in the app. The remote connects to one phone at a time.
 
-Screen-off camera launch and mode/zoom controls were user-tested on both phones with the preceding wake behavior. Xiaomi compatibility also worked with USB unplugged. The S22+ device log confirms the new long-M1 open / screen-off / open sequence; short controls after this change await user confirmation. Other camera layouts and long-term background survival are unverified.
+Screen-off camera launch and mode/zoom controls were user-tested on both phones with the preceding wake behavior. Xiaomi compatibility also worked with USB unplugged. On S22+, the user confirmed long M1 camera launch, a second hold turning the screen off, short M1/M2 modes and W/T zoom. The remote may briefly show an unlock screen or Camera before the final action; its built-in macro causes these transitions. Other camera layouts and long-term background survival are unverified.
 
 <img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake app, earlier Xiaomi screen" width="320">
 
