@@ -12,16 +12,39 @@ import java.util.concurrent.*;
 // Bluetooth permissions are supplied by ADB-started UiAutomation for this session only.
 @android.annotation.SuppressLint("MissingPermission")
 public final class CompatibilityInstrumentation extends Instrumentation {
+ static boolean samsung(){return "samsung".equalsIgnoreCase(Build.MANUFACTURER);}
+ static String cameraPackage(){return samsung()?"com.sec.android.app.camera":"com.android.camera";}
+ static String cameraComponent(){return cameraPackage()+"/.Camera";}
  private final Handler wakeHandler=new Handler(Looper.getMainLooper());
- private volatile long lastScreenOn,lastWakeSignal,lastLaunch;
+ private volatile long lastLaunch,lastLongPress,lastScreenChange;
+ private volatile boolean screenInteractive,screenBeforeChange;
  private android.content.BroadcastReceiver screenReceiver;
- void remoteWakeSignal(){lastWakeSignal=SystemClock.uptimeMillis();android.os.PowerManager p=(android.os.PowerManager)getTargetContext().getSystemService(Context.POWER_SERVICE);if(!p.isInteractive()||lastWakeSignal-lastScreenOn<1500)scheduleWake();}
- void scheduleWake(){wakeHandler.postDelayed(()->{android.os.PowerManager p=(android.os.PowerManager)getTargetContext().getSystemService(Context.POWER_SERVICE);if(p.isInteractive()&&SystemClock.uptimeMillis()-lastWakeSignal<1800)actions.execute(this::openCamera);},250);}
+ // M1's hold macro sends a Consumer Power report. Short mode gestures never launch Camera.
+ void longM1(){
+  long now=SystemClock.uptimeMillis();
+  if(!ready||!Controls.batteryReady(getTargetContext())||!Controls.pref(getTargetContext()).getBoolean("m1_camera",true)||now-lastLongPress<3500)return;
+  lastLongPress=now;
+  boolean wasOn=now-lastScreenChange<300?screenBeforeChange:screenInteractive;
+  actions.execute(()->{
+   boolean sleep=wasOn&&cameraFocused();
+   log("LONG M1 "+(sleep?"SCREEN OFF":"OPEN CAMERA"));
+   // Let the remote's native power/swipe macro finish before enforcing the chosen state.
+   if(sleep)setScreenOff();
+   wakeHandler.postDelayed(()->actions.execute(()->{if(sleep)setScreenOff();else openCamera();}),3000);
+  });
+ }
+ void setScreenOff(){
+  try(java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(getUiAutomation(android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).executeShellCommand("input keyevent KEYCODE_SLEEP"))){in.readAllBytes();log("SCREEN OFF");}catch(Exception e){log("SLEEP ERROR "+e);}
+ }
  void openCamera(){
   Context c=getTargetContext();long now=SystemClock.uptimeMillis();if(!ready||!Controls.batteryReady(c)||!Controls.pref(c).getBoolean("m1_camera",true)||now-lastLaunch<1800)return;
-  lastLaunch=now;boolean locked=((android.app.KeyguardManager)c.getSystemService(Context.KEYGUARD_SERVICE)).isKeyguardLocked();
+  lastLaunch=now;
+  if(!((android.os.PowerManager)c.getSystemService(Context.POWER_SERVICE)).isInteractive()){
+   try(java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(getUiAutomation(android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).executeShellCommand("input keyevent KEYCODE_WAKEUP"))){in.readAllBytes();}catch(Exception e){log("WAKE ERROR "+e);}
+  }
+  boolean locked=((android.app.KeyguardManager)c.getSystemService(Context.KEYGUARD_SERVICE)).isKeyguardLocked();
   String action=locked?"android.media.action.STILL_IMAGE_CAMERA_SECURE":"android.media.action.STILL_IMAGE_CAMERA";
-  try(java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(getUiAutomation(android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).executeShellCommand("am start -a "+action+" -n com.android.camera/.Camera"))){log("CAMERA "+(locked?"SECURE":"NORMAL")+" "+new String(in.readAllBytes()).trim());}catch(Exception e){log("CAMERA ERROR "+e);}
+  try(java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(getUiAutomation(android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).executeShellCommand("am start -a "+action+" -n "+cameraComponent()))){log("CAMERA "+(locked?"SECURE":"NORMAL")+" "+new String(in.readAllBytes()).trim());}catch(Exception e){log("CAMERA ERROR "+e);}
  }
  public static volatile CompatibilityInstrumentation active; public volatile boolean ready;
  BluetoothGatt gatt; final ExecutorService actions=new ThreadPoolExecutor(1,1,0,TimeUnit.MILLISECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.DiscardPolicy());
@@ -41,7 +64,8 @@ public final class CompatibilityInstrumentation extends Instrumentation {
  @Override public void onStart(){
   active=this;getUiAutomation(android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).adoptShellPermissionIdentity("android.permission.BLUETOOTH_PRIVILEGED", "android.permission.BLUETOOTH_CONNECT");
   Context ctx=getTargetContext();
-  screenReceiver=new android.content.BroadcastReceiver(){@Override public void onReceive(Context c,android.content.Intent i){if(android.content.Intent.ACTION_SCREEN_ON.equals(i.getAction())){lastScreenOn=SystemClock.uptimeMillis();if(lastScreenOn-lastWakeSignal<1500)scheduleWake();}else lastScreenOn=0;}};
+  screenInteractive=((android.os.PowerManager)ctx.getSystemService(Context.POWER_SERVICE)).isInteractive();
+  screenReceiver=new android.content.BroadcastReceiver(){@Override public void onReceive(Context c,android.content.Intent i){screenBeforeChange=screenInteractive;screenInteractive=android.content.Intent.ACTION_SCREEN_ON.equals(i.getAction());lastScreenChange=SystemClock.uptimeMillis();}};
   android.content.IntentFilter screens=new android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_ON);screens.addAction(android.content.Intent.ACTION_SCREEN_OFF);ctx.registerReceiver(screenReceiver,screens,Context.RECEIVER_NOT_EXPORTED);
 
   BluetoothAdapter adapter=((BluetoothManager)ctx.getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
@@ -66,8 +90,7 @@ public final class CompatibilityInstrumentation extends Instrumentation {
     next();
    }
    @Override public void onCharacteristicChanged(BluetoothGatt g,BluetoothGattCharacteristic c,byte[] value){int id=reportIds.getOrDefault(c.getInstanceId(),-1);
-    if(id==2&&value.length>=2&&(value[0]&255)==0x30&&value[1]==0)remoteWakeSignal();
-    if(id==4&&value.length==4&&(value[0]&1)!=0&&(((value[1]&255)|((value[2]&15)<<8))<350))remoteWakeSignal();
+    if(id==2&&value.length>=2&&(value[0]&255)==(samsung()?1:0x30)&&value[1]==0)longM1();
     decodeZoom(c,value);decodeMode(c,value);}
    @Override public void onDescriptorRead(BluetoothGatt g,BluetoothGattDescriptor d,int status,byte[] value){if(status==0 && d.getUuid().toString().startsWith("00002908") && value.length==2 && value[1]==1)reportIds.put(d.getCharacteristic().getInstanceId(),value[0]&255);next();}
    @Override public void onCharacteristicRead(BluetoothGatt g,BluetoothGattCharacteristic c,byte[] value,int status){
@@ -77,19 +100,19 @@ public final class CompatibilityInstrumentation extends Instrumentation {
   },BluetoothDevice.TRANSPORT_LE);
  }
  void decodeZoom(BluetoothGattCharacteristic c,byte[] b){
-  if(reportIds.getOrDefault(c.getInstanceId(),-1)!=3||b.length!=13)return;
+  if(samsung()||reportIds.getOrDefault(c.getInstanceId(),-1)!=3||b.length!=13)return;
   if((b[0]&1)!=0){int x=(b[1]&255)|((b[2]&15)<<8);if(zoomCount++==0)zoomFirst=x;zoomLast=x;}
   else if(zoomCount>0){int delta=zoomLast-zoomFirst;zoomCount=0;long now=SystemClock.uptimeMillis();if(delta!=0&&now-lastZoom>=180){lastZoom=now;actions.execute(()->pinch(delta<0));}}
  }
  void decodeMode(BluetoothGattCharacteristic c,byte[] b){
-  if(reportIds.getOrDefault(c.getInstanceId(),-1)!=4||b.length!=4)return;
+  if(reportIds.getOrDefault(c.getInstanceId(),-1)!=(samsung()?3:4)||b.length!=4)return;
   if((b[0]&1)!=0){int x=(b[1]&255)|((b[2]&15)<<8);if(modeCount++==0)modeFirst=x;modeLast=x;}
   else if(modeCount>0){int delta=modeLast-modeFirst;modeCount=0;long now=SystemClock.uptimeMillis();if(Math.abs(delta)>=250&&now-lastMode>=450){lastMode=now;actions.execute(()->mode(delta>0));}}
  }
  void mode(boolean right){
   if(!ready||!Controls.batteryReady(getTargetContext()))return;
-  if(!cameraFocused()){if(right)openCamera();return;}
-  if(SystemClock.uptimeMillis()-lastLaunch<1800)return;
+  if(!cameraFocused())return;
+  if(samsung()||SystemClock.uptimeMillis()-lastLaunch<1800||SystemClock.uptimeMillis()-lastLongPress<3500)return;
   DisplayMetrics m=new DisplayMetrics();((DisplayManager)getTargetContext().getSystemService(Context.DISPLAY_SERVICE)).getDisplay(0).getRealMetrics(m);
   int x1=(int)(m.widthPixels*(right?.30:.70)),x2=m.widthPixels-x1,y=(int)(m.heightPixels*.782);
   try(java.io.InputStream in=new ParcelFileDescriptor.AutoCloseInputStream(getUiAutomation(android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).executeShellCommand("input touchscreen swipe "+x1+" "+y+" "+x2+" "+y+" 220"))){String result=new String(in.readAllBytes());log("MODE "+(right?"PREVIOUS":"NEXT")+" "+result.trim());}catch(Exception e){log("MODE ERROR "+e);}
@@ -97,7 +120,7 @@ public final class CompatibilityInstrumentation extends Instrumentation {
  public void stopCompatibility(){ready=false;actions.shutdownNow();if(gatt!=null)gatt.close();active=null;finish(0,new Bundle());}
  boolean cameraFocused(){
   try(java.io.InputStream in=new android.os.ParcelFileDescriptor.AutoCloseInputStream(getUiAutomation(android.app.UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES).executeShellCommand("dumpsys window"))){
-   return java.util.regex.Pattern.compile("mCurrentFocus=.*com\\.android\\.camera/").matcher(new String(in.readAllBytes())).find();
+   return java.util.regex.Pattern.compile("mCurrentFocus=.*"+java.util.regex.Pattern.quote(cameraPackage()+"/")).matcher(new String(in.readAllBytes())).find();
   }catch(Exception e){log("FOCUS ERROR "+e);return false;}
  }
  void event(long down,int action,int count,float cx,float cy,float separation){
