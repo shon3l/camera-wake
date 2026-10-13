@@ -1,20 +1,28 @@
 # Camera Wake
 
-Free Android companion for **TELESIN P4-WTP-06**. Hold **M1** to open Xiaomi Camera from screen off; press M1 again to turn the screen off. No root.
+TELESIN P4-WTP-06 camera controls for **Xiaomi 17 Ultra (2512BPNDAG), Android 17 / HyperOS OS3.0.336.0.XPAEUXM**.
 
-<img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake app with required setup, M1 camera control and original button photo" width="320" />
+- **M1:** open secure Camera from screen off; previous mode in Camera.
+- **M2:** next mode.
+- **W / T:** zoom out / in.
+- **Capture:** native photo/video control.
 
-## Install & use
+All four controls and screen-off camera launch were confirmed on the test phone. The compatibility helper also worked with USB unplugged. No root or firmware changes.
 
-[Download the APK](../../releases/latest). Pair **TELESIN_SDC** in Bluetooth, then open Camera Wake:
+## Use
 
-1. Enable **TELESIN Button Lab** in Accessibility. If blocked, allow restricted settings in App info.
-2. Disable **battery optimization** using the app’s setup button. On HyperOS, also set Battery saver to **No restrictions**.
-3. When setup shows **Ready**, enable **M1 camera wake**.
-4. Screen off → hold M1 → Camera opens. Press M1 again → screen off.
+1. Download and extract **Camera-Wake-2.0.zip** from [Releases](https://github.com/shon3l/camera-wake/releases/latest).
+2. Pair **TELESIN_SDC**, connect USB debugging, then run `./start.sh` (set `ADB=/path/to/adb` if needed).
+3. Open Camera Wake and allow unrestricted battery use. When Ready, unplug USB.
 
-Both setup checks are required. After updates, check the listener is still enabled. No key learning is needed. Button settings show M1/M2 first. Restore defaults keeps learned keys and M1 wake while restoring native actions. Turn camera wake off after case use: **any screen wake can open Camera while enabled**.
+**Run start.sh again after reboot or stopping the helper.** Android requires this activation for direct HID access. Version 2 combines wake and compatibility in one app; Accessibility is no longer required. Reset to defaults and Stop are available in the app.
 
-**Tested:** Xiaomi 17 Ultra (2512BPNDAG), Android 17 / HyperOS OS3.0.336.0.XPAEUXM, TELESIN P4-WTP-06. Other devices are unverified.
+The fix translates reports Xiaomi mishandles; native cursor clicks may still appear. Other camera layouts and long-term background survival are unverified. Galaxy S22+ (SM-S906B), Android 16 worked natively and needs no helper.
 
-No Internet, ads or accounts. Code and custom logo: **MIT**; product photo: [third-party credit](THIRD_PARTY_NOTICES.md). [Build and advanced details](docs/DETAILS.md).
+<img src="docs/screenshots/camera-wake-main.png" alt="Camera Wake app" width="320">
+
+## Build
+
+JDK 17, Android SDK 35: `./gradlew assembleDebug lintDebug`.
+
+MIT for code/logo; product photo has separate rights: [third-party notices](THIRD_PARTY_NOTICES.md).

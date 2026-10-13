@@ -6,10 +6,10 @@ android {
 
     defaultConfig {
         applicationId 'org.telesin.buttonlab'
-        minSdk 29
+        minSdk 33
         targetSdk 35
-        versionCode 13
-        versionName '1.2.0'
+        versionCode 20
+        versionName '2.0.0'
     }
 
     compileOptions {

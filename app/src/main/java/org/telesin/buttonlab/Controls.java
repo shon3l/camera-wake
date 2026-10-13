@@ -28,7 +28,7 @@ final class Controls {
             for (String key : new String[]{"action", "long_action", "x", "y", "orientation"}) edit.remove(pre + key);
         }
         edit.remove("learning_slot").remove("learning_deadline");
-        if (slot < 0) edit.putInt("hold_millis", 700).putString("camera_package", "com.android.camera");
+        if (slot < 0) edit.putBoolean("native_controls", true).putInt("hold_millis", 700).putString("camera_package", "com.android.camera");
         edit.apply();
     }
 
