@@ -14,7 +14,7 @@ Samsung keeps its native controls; Xiaomi gets the mode/zoom compatibility fix. 
 2. Pair **TELESIN_SDC**, connect USB debugging, then run `./start-s22.sh` or `./start-xiaomi.sh` (`ADB=/path/to/adb` if needed).
 3. Open Camera Wake and allow unrestricted battery use. When Ready, unplug USB.
 
-**Activate again after reboot or stopping the helper.** Accessibility is not required. Reset to defaults and Stop are in the app. The remote connects to one phone at a time.
+**Activate again after reboot or stopping the helper.** Offline activation from an S22+ over USB was confirmed; [instructions and researched alternatives](docs/ACTIVATION.md). Accessibility is not required. Reset to defaults and Stop are in the app. The remote connects to one phone at a time.
 
 Screen-off camera launch and mode/zoom controls were user-tested on both phones with the preceding wake behavior. Xiaomi compatibility also worked with USB unplugged. On S22+, the user confirmed long M1 camera launch, a second hold turning the screen off, short M1/M2 modes and W/T zoom. The remote may briefly show an unlock screen or Camera before the final action; its built-in macro causes these transitions. Other camera layouts and long-term background survival are unverified.
 
