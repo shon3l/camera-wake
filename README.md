@@ -4,6 +4,10 @@ A free, open-source companion for the **TELESIN P4-WTP-06 diving phone case**. H
 
 **No ADB activation, root, account, ads or tracking.**
 
+<img src="app/src/main/res/drawable/controller_reference.webp" alt="TELESIN P4-WTP-06 diving phone case showing Capture, M1, M2, W and T physical buttons" width="420">
+
+*TELESIN P4-WTP-06 case and physical controls. Product reference photo from Kareem Stores; [source and artwork attribution](THIRD_PARTY_NOTICES.md).*
+
 ## Get started
 
 [Download Camera Wake 3.0](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
