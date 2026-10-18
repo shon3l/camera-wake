@@ -23,9 +23,10 @@ public final class WakeCameraActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        BetaLog.add(this, "Wake activity created");
         // Android 9+: request the user-visible camera shortcut to wake/show over lockscreen.
         setShowWhenLocked(true);
-        setTurnScreenOn(true);
+        setTurnScreenOn(!getIntent().getBooleanExtra("screen_wake_only", false));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         TextView message = new TextView(this);
         message.setText("Opening camera…");
@@ -43,6 +44,12 @@ public final class WakeCameraActivity extends Activity {
     }
 
     private void openSecureCamera() {
+        android.os.PowerManager power = (android.os.PowerManager)getSystemService(POWER_SERVICE);
+        if (getIntent().getBooleanExtra("screen_wake_only", false) && power != null && !power.isInteractive()) {
+            BetaLog.add(this, "Camera wake cancelled: screen turned off");
+            finish();
+            return;
+        }
         SharedPreferences pref = Controls.pref(this);
         KeyguardManager keyguard = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         boolean locked = keyguard != null && keyguard.isKeyguardLocked();
@@ -57,6 +64,7 @@ public final class WakeCameraActivity extends Activity {
         if ("com.android.camera".equals(target)) intent.setClassName(target, "com.android.camera.Camera");
         try {
             startActivity(intent);
+            BetaLog.add(this, "Camera intent sent locked=" + locked);
             pref.edit().putString("wake_status", "Camera launch intent sent (locked=" + locked
                     + "). Confirm on device whether Camera actually opened.").apply();
         } catch (ActivityNotFoundException missing) {

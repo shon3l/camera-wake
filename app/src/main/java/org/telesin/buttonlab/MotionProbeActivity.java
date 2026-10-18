@@ -14,6 +14,7 @@ public final class MotionProbeActivity extends Activity {
     private TextView output;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(32, 100, 32, 40);
@@ -39,7 +40,11 @@ public final class MotionProbeActivity extends Activity {
         String line = event.getEventTime() + " " + MotionEvent.actionToString(event.getAction())
             + " x=" + Math.round(event.getX()) + " y=" + Math.round(event.getY())
             + " pointers=" + event.getPointerCount() + " buttons=" + event.getButtonState()
-            + " source=" + Integer.toHexString(event.getSource()) + "\n";
+            + " source=" + Integer.toHexString(event.getSource())
+            + " relative=" + event.getAxisValue(MotionEvent.AXIS_RELATIVE_X) + "," + event.getAxisValue(MotionEvent.AXIS_RELATIVE_Y)
+            + " scroll=" + event.getAxisValue(MotionEvent.AXIS_HSCROLL) + "," + event.getAxisValue(MotionEvent.AXIS_VSCROLL)
+            + " generic1=" + event.getAxisValue(MotionEvent.AXIS_GENERIC_1)
+            + " raw=" + event.getRawX() + "," + event.getRawY() + "\n";
         events.append(line);
         if (events.length() > 20000) events.delete(0, events.length() - 16000);
         Controls.pref(this).edit().putString("motion_probe", events.toString()).apply();

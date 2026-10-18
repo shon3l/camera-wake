@@ -34,18 +34,118 @@ import android.widget.Toast;
 public final class MappingService extends AccessibilityService {
     static volatile MappingService instance;
     private String foregroundPackage = "";
+    private boolean screenReceiverRegistered;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private long screenOffAt;
+    private View transitionGuard;
+    private final Runnable clearTransitionGuard = this::removeTransitionGuard;
+
+    private void showTransitionGuard(long timeoutMillis) {
+        handler.removeCallbacks(clearTransitionGuard);
+        if (transitionGuard == null) {
+            if (windowManager == null) windowManager = (WindowManager)getSystemService(WINDOW_SERVICE);
+            View shield = new View(this);
+            shield.setBackgroundColor(0xff000000);
+            shield.setOnTouchListener((view, event) -> true);
+            WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.OPAQUE);
+            params.gravity = Gravity.TOP | Gravity.LEFT;
+            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            try { windowManager.addView(shield, params); transitionGuard = shield; }
+            catch (RuntimeException error) { BetaLog.add(this, "Transition guard unavailable: " + error.getClass().getSimpleName()); }
+        }
+        // Always remove the temporary input shield, even if Camera cannot launch.
+        handler.postDelayed(clearTransitionGuard, timeoutMillis);
+    }
+
+    private void removeTransitionGuard() {
+        handler.removeCallbacks(clearTransitionGuard);
+        if (transitionGuard != null) {
+            try { windowManager.removeViewImmediate(transitionGuard); } catch (RuntimeException ignored) { }
+            transitionGuard = null;
+        }
+    }
+    private final Runnable wakeAfterScreenSettles = () -> {
+        PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+        if (pm != null && pm.isInteractive() && Controls.pref(this).getBoolean("camera_on_wake", false))
+            requestWakeCamera("stable screen wake");
+        handler.removeCallbacks(clearTransitionGuard);
+        handler.postDelayed(clearTransitionGuard, 250);
+    };
+    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context c, Intent i) {
+            if (Intent.ACTION_SCREEN_OFF.equals(i.getAction())) {
+                screenOffAt = android.os.SystemClock.elapsedRealtime();
+                if (Controls.pref(c).getBoolean("camera_on_wake", false)) showTransitionGuard(1600);
+                handler.removeCallbacks(wakeAfterScreenSettles);
+                BetaLog.add(c, "Screen off: pending camera wake cancelled");
+            } else if (Intent.ACTION_SCREEN_ON.equals(i.getAction()) && Controls.pref(c).getBoolean("camera_on_wake", false)) {
+                handler.removeCallbacks(wakeAfterScreenSettles);
+                long offMillis = android.os.SystemClock.elapsedRealtime() - screenOffAt;
+                if (screenOffAt != 0 && offMillis < 800) {
+                    BetaLog.add(c, "Rapid screen bounce after " + offMillis + "ms; restoring screen off");
+                    // Lock immediately: waiting half a second exposes the resumed Camera.
+                    BetaLog.add(c, "Restore screen off immediately: " + performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN));
+                } else {
+                    // M1 trails Power with a swipe at ~650 ms and another key at ~1400 ms.
+                    showTransitionGuard(2200);
+                    handler.postDelayed(wakeAfterScreenSettles, 1600);
+                }
+            }
+            if (System.currentTimeMillis() < Controls.pref(c).getLong("diagnostic_until", 0))
+                BetaLog.add(c, "Screen transition: " + i.getAction());
+        }
+    };
     private WindowManager windowManager;
     private View pickerOverlay;
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private long pointerDiagnosticUntil;
+    private final Runnable endPointerDiagnostic = () -> {
+        pointerDiagnosticUntil = 0;
+        if (Build.VERSION.SDK_INT >= 34) {
+            AccessibilityServiceInfo info = getServiceInfo();
+            if (info != null) { info.setMotionEventSources(0); setServiceInfo(info); }
+        }
+        BetaLog.add(this, "Pointer diagnostic ended; native input restored");
+    };
+
+    void startPointerDiagnostic() {
+        if (Build.VERSION.SDK_INT < 34) { Toast.makeText(this, "Requires Android 14 or newer", Toast.LENGTH_LONG).show(); return; }
+        AccessibilityServiceInfo info = getServiceInfo();
+        if (info == null) return;
+        pointerDiagnosticUntil = android.os.SystemClock.elapsedRealtime() + 60000;
+        info.setMotionEventSources(InputDevice.SOURCE_MOUSE);
+        setServiceInfo(info);
+        handler.removeCallbacks(endPointerDiagnostic);
+        handler.postDelayed(endPointerDiagnostic, 60000);
+        BetaLog.add(this, "Pointer diagnostic started for 60 seconds (native pointer input paused)");
+    }
+
+    @Override public void onMotionEvent(MotionEvent event) {
+        if (Build.VERSION.SDK_INT < 34 || pointerDiagnosticUntil == 0) return;
+        if (android.os.SystemClock.elapsedRealtime() >= pointerDiagnosticUntil) { endPointerDiagnostic.run(); return; }
+        InputDevice device = event.getDevice();
+        if (device == null || !device.getName().startsWith("TELESIN")) return;
+        StringBuilder line = new StringBuilder("TELESIN pointer ").append(MotionEvent.actionToString(event.getAction())).append(" source=").append(Integer.toHexString(event.getSource()));
+        for (int i=0;i<event.getPointerCount();i++) line.append(" p").append(i).append("=").append(Math.round(event.getX(i))).append(",").append(Math.round(event.getY(i)));
+        BetaLog.add(this, line.toString());
+    }
 
     @Override public void onServiceConnected() {
         super.onServiceConnected();
         instance = this;
+        BetaLog.add(this, "Accessibility connected");
+        if (!screenReceiverRegistered) {
+            IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+            filter.addAction(Intent.ACTION_SCREEN_OFF);
+            registerReceiver(screenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            screenReceiverRegistered = true;
+        }
         AccessibilityServiceInfo config = getServiceInfo();
         if (config != null) {
-            if (Controls.pref(this).getBoolean("native_controls", true))
-                config.flags &= ~AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
-            else config.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+            config.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
             if (Build.VERSION.SDK_INT >= 34) config.setMotionEventSources(0);
             setServiceInfo(config);
         }
@@ -55,25 +155,29 @@ public final class MappingService extends AccessibilityService {
         if (event != null && event.getPackageName() != null) {
             String name = event.getPackageName().toString();
             if (!name.equals(getPackageName())) foregroundPackage = name;
+            if (name.equals(cameraPackage()) && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
+                BetaLog.add(this, "Camera window observed by Accessibility");
         }
     }
 
     void refreshNativeControls() {
         AccessibilityServiceInfo config = getServiceInfo();
         if (config == null) return;
-        if (Controls.pref(this).getBoolean("native_controls", true))
-            config.flags &= ~AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
-        else config.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+        config.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
         if (Build.VERSION.SDK_INT >= 34) config.setMotionEventSources(0);
         setServiceInfo(config);
         cancelPendingActions();
     }
 
-    @Override public void onInterrupt() { clearPresses(); }
+    @Override public void onInterrupt() { clearPresses(); if (pointerDiagnosticUntil != 0) endPointerDiagnostic.run(); }
 
     @Override public void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        removeTransitionGuard();
         clearPresses();
         removePicker();
+        if (screenReceiverRegistered) { unregisterReceiver(screenReceiver); screenReceiverRegistered = false; }
+        BetaLog.add(this, "Accessibility disconnected");
         instance = null;
         super.onDestroy();
     }
@@ -104,9 +208,11 @@ public final class MappingService extends AccessibilityService {
     }
 
     @Override protected boolean onKeyEvent(KeyEvent event) {
-        if (Controls.pref(this).getBoolean("native_controls", true)) return false;
+
         SharedPreferences p = Controls.pref(this);
         InputDevice device = event.getDevice();
+        if (transitionGuard != null && device != null && device.getName().startsWith("TELESIN"))
+            return true;
         // Log only while this app is foreground or the user explicitly requested learning.
         int learning = p.getInt("learning_slot", -1);
         boolean labForeground = isLabForeground();
@@ -115,6 +221,11 @@ public final class MappingService extends AccessibilityService {
             learning = -1;
         }
         boolean diagnostic = labForeground;
+        if (device != null && device.isExternal() && (diagnostic ||
+                System.currentTimeMillis() < p.getLong("diagnostic_until", 0))) {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            BetaLog.add(this, Controls.details(event) + " screen=" + pm.isInteractive());
+        }
         if (diagnostic && event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0
                 && device != null && device.isExternal()) {
             p.edit().putString("last_event", Controls.details(event)).apply();
@@ -181,8 +292,10 @@ public final class MappingService extends AccessibilityService {
     private final java.util.Map<String, Press> presses = new java.util.HashMap<>();
 
     void cancelPendingActions() {
+        if (pointerDiagnosticUntil != 0) endPointerDiagnostic.run();
         clearPresses();
         handler.removeCallbacksAndMessages(null);
+        removeTransitionGuard();
         removePicker();
     }
 
@@ -193,7 +306,12 @@ public final class MappingService extends AccessibilityService {
 
     private void runAction(int action, int slot) {
         if (action == Controls.PASS) return;
-        if (action == Controls.WAKE_CAMERA) attemptWakeCamera(slot);
+        BetaLog.add(this, "Mapped " + Controls.SLOTS[slot] + " to " + Controls.ACTIONS[action]);
+        if (action == Controls.WAKE_CAMERA) {
+            if (isCameraForeground() && ((PowerManager)getSystemService(POWER_SERVICE)).isInteractive()) {
+                BetaLog.add(this, "Lock screen: " + performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN));
+            } else attemptWakeCamera(slot);
+        }
         else if (isCameraForeground()) perform(action, slot);
     }
 
@@ -201,7 +319,27 @@ public final class MappingService extends AccessibilityService {
         requestWakeCamera(Controls.SLOTS[slot]);
     }
 
-    private void requestWakeCamera(String source) {
+    void scheduleCameraTest() { handler.postDelayed(() -> requestWakeCamera("10-second screen-off test"), 10000); }
+
+    void requestWakeCamera(String source) {
+        BetaLog.add(this, "Camera requested by " + source);
+        if (source.equals("stable screen wake")) {
+            PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+            if (pm == null || !pm.isInteractive()) return;
+            // Screen is already awake: launch Camera directly, without a visible trampoline.
+            android.app.KeyguardManager keyguard = (android.app.KeyguardManager)getSystemService(KEYGUARD_SERVICE);
+            String action = keyguard != null && keyguard.isKeyguardLocked()
+                ? android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE
+                : android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA;
+            Intent camera = new Intent(action);
+            String target = cameraPackage();
+            if (!target.isEmpty()) camera.setPackage(target);
+            if ("com.android.camera".equals(target)) camera.setClassName(target, "com.android.camera.Camera");
+            camera.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            try { startActivity(camera); BetaLog.add(this, "Camera opened directly on stable wake"); }
+            catch (RuntimeException error) { BetaLog.add(this, "Direct camera launch failed: " + error.getClass().getSimpleName()); }
+            return;
+        }
         PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
         boolean interactive = power != null && power.isInteractive();
         SharedPreferences pref = Controls.pref(this);
@@ -210,6 +348,7 @@ public final class MappingService extends AccessibilityService {
             + ", screen interactive=" + interactive
             + ". Requesting secure camera; launch may be restricted by HyperOS.").apply();
         Intent intent = new Intent(this, WakeCameraActivity.class);
+        intent.putExtra("screen_wake_only", source.equals("stable screen wake"));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION
                 | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
         try {
@@ -219,6 +358,11 @@ public final class MappingService extends AccessibilityService {
                     + problem.getClass().getSimpleName()).apply();
         }
     }
+
+    private final GestureResultCallback gestureResult = new GestureResultCallback() {
+        @Override public void onCompleted(GestureDescription gesture) { BetaLog.add(MappingService.this, "Gesture completed"); }
+        @Override public void onCancelled(GestureDescription gesture) { BetaLog.add(MappingService.this, "Gesture cancelled"); }
+    };
 
     private Point screen() {
         if (windowManager == null) windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
@@ -232,12 +376,26 @@ public final class MappingService extends AccessibilityService {
         if (action == Controls.IGNORE) return;
         Point display = screen();
         if (display.x <= 0 || display.y <= 0) return;
+        if (action == Controls.ZOOM_OUT || action == Controls.ZOOM_IN) {
+            boolean inward = action == Controls.ZOOM_OUT;
+            float from = display.x * (inward ? .28f : .10f);
+            float to = display.x * (inward ? .10f : .28f);
+            GestureDescription.Builder builder = new GestureDescription.Builder();
+            for (int sign : new int[]{-1, 1}) {
+                Path pinch = new Path();
+                pinch.moveTo(display.x*.5f + sign*from, display.y*.45f);
+                pinch.lineTo(display.x*.5f + sign*to, display.y*.45f);
+                builder.addStroke(new GestureDescription.StrokeDescription(pinch, 0, 300));
+            }
+            BetaLog.add(this, "Zoom gesture accepted=" + dispatchGesture(builder.build(), gestureResult, handler));
+            return;
+        }
         float x1, x2, y1, y2;
         long duration;
         if (action == Controls.TAP) {
             SharedPreferences p = Controls.pref(this);
             String pre = Controls.prefix(slot);
-            if (!p.contains(pre + "x") || !p.contains(pre + "y")) return;
+            if (!p.contains(pre + "x") || !p.contains(pre + "y")) { BetaLog.add(this, "Tap needs calibration: " + Controls.SLOTS[slot]); return; }
             // Camera UI targets are orientation-specific. Avoid mis-taps after rotation.
             int orientation = getResources().getConfiguration().orientation;
             if (p.getInt(pre + "orientation", orientation) != orientation) return;
@@ -260,7 +418,7 @@ public final class MappingService extends AccessibilityService {
         path.moveTo(x1, y1);
         if (action != Controls.TAP) path.lineTo(x2, y2);
         GestureDescription.StrokeDescription stroke = new GestureDescription.StrokeDescription(path, 0, duration);
-        dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), null, null);
+        BetaLog.add(this, "Camera gesture accepted=" + dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), gestureResult, handler));
     }
 
     /** Overlay allows calibrating actual Xiaomi Camera coordinates rather than guessing them. */

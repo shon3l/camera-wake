@@ -1,9 +1,14 @@
-# Compatibility notes
+# Compatibility and verification
 
-An ADB-started instrumentation session reads existing HID notifications using session-scoped Bluetooth permissions, without writing remote characteristics. Battery exemption is required; activation must be repeated after reboot or stopping the app.
+| Configuration | Result |
+| --- | --- |
+| Xiaomi 17 Ultra / Android 17 / HyperOS OS3.0.336.0.XPAEUXM; TELESIN P4-WTP-06; firmware V5.7 | Previous ADB-based 2.1 helper worked; native Xiaomi mode/zoom compatibility was the original blocker. |
+| Same Xiaomi; V5.9, old pairing retained | Controls were misinterpreted; updating alone was insufficient. |
+| Same Xiaomi; V5.9, fresh Bluetooth pairing | Native M1, M2, W, T and Capture confirmed with old helpers stopped. |
+| Beta 3.1, V5.9, fresh pairing | Long M1 wake/sleep and all controls confirmed after reboot, first PIN unlock, USB unplugged, no script or app reopening. |
+| Beta 4 | Controls and improved transitions confirmed; trailing M1 gesture could briefly open a Camera option. |
+| Beta 5 | Long M1 wake/sleep with black input guard confirmed; user reported improved/faster transition. All regular controls were confirmed during Beta 5 testing. Reboot not repeated on this version. |
+| Galaxy S22+ / Android 16 | Legacy 2.1 tested. V5.9 plus Beta 5 not tested. |
+| Other phones, remotes, firmware, camera apps | Unverified. |
 
-Xiaomi reports M1/M2 in report 4 and W/T in report 3, although its report map omits report 3. The helper translates these into Camera gestures. Samsung describes touchscreen report 3 correctly and retains native mode/zoom controls.
-
-Long M1 sends a Consumer Power report (Samsung 0100; Xiaomi 3000). The helper remembers the screen state around that report and opens secure Camera when locked, or sends KEYCODE_SLEEP when Camera was active. It waits three seconds for the remote's native power/gesture macro to finish before enforcing the chosen state. Short mode gestures do not launch Camera.
-
-Test phones: Xiaomi 17 Ultra 2512BPNDAG, Android 17, HyperOS OS3.0.336.0.XPAEUXM; Galaxy S22+ SM-S906B, Android 16. Both passed earlier camera-wake and mode/zoom user tests; the user confirmed the S22+ long-M1 camera launch / screen-off toggle and short M1/M2 and W/T controls. The native remote macro briefly shows screen transitions before the final action. A visible unlock screen does not establish that keyguard authentication was bypassed. USB-disconnected compatibility was confirmed on Xiaomi. Reconnection, endurance, and other camera layouts remain unverified.
+Tests used the stock Xiaomi Camera. This does not establish behavior in every camera mode/orientation or long-term background survival. Before-first-unlock operation, interrupted firmware updates and firmware rollback are untested. The black transition guard is a workaround for a remote macro, not prevention of system Power events.

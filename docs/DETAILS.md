@@ -1,90 +1,27 @@
-# Camera Wake: detailed reference
+# Technical notes: no-ADB beta
 
-## Tested phone
+## Architecture
 
-**Xiaomi 17 Ultra**, model **2512BPNDAG**, running **Android 17 / HyperOS OS3.0.336.0.XPAEUXM**, with a **TELESIN P4-WTP-06 / TELESIN_SDC** controller. Tested on 12 October 2026.
+Application ID: `org.telesin.camerawake.beta`; namespace: `org.telesin.buttonlab`. A user-enabled accessibility service observes screen transitions, launches the secure Camera while locked, and requests the public accessibility screen-lock action to correct rapid wake bounce. V5.9 plus a fresh Bluetooth pairing provides the ordinary controls through Android’s native HID handling.
 
-The owner confirmed this sequence works:
+The current manifest registers **no instrumentation**. There is no system UID, adopted privileged permission, `INJECT_EVENTS`, root requirement or startup script. Bluetooth diagnostics request ordinary `BLUETOOTH_CONNECT`; they are not the runtime control path. The app includes diagnostic/mapping tools retained from testing, but working native buttons require no learning.
 
-- With the screen off, **hold M1** to wake the screen and open the secure camera.
-- **Press M1 again** to turn the screen off.
+## Wake/sleep sequence
 
-Other phones, firmware versions and controllers have not been validated. The app does not unlock the phone; existing photos and other protected phone functions remain behind the lock screen.
+Long M1 was observed to emit a Power pulse, a touchscreen swipe about 650 ms later, and a consumer key around 1400 ms later. Android handles Power in system policy before normal app dispatch. A normal app cannot reliably consume it through accessibility on this phone.
 
-## Download and install
+- Screen-off cancels pending automatic Camera launches and shows a temporary black accessibility overlay.
+- A wake within **800 ms** of sleep is treated as bounce and immediately corrected with `GLOBAL_ACTION_LOCK_SCREEN`.
+- A genuine wake shows a temporary black input guard, waits **1600 ms**, launches Camera directly, then removes the guard **250 ms** later.
+- The guard absorbs touches and TELESIN key callbacks while present. It has a timeout, and cleanup runs on service destruction/cancellation. It can briefly block intentional input during transition.
+- Normal native controls pass through outside the guard. A brief residual system transition remains possible; this is reactive handling, not a firmware-level fix.
 
-Download **Camera-Wake-1.1.0.apk** from this repository’s **Releases** page. It is free, with no subscription, ads, accounts or in-app purchases.
+Camera-on-wake responds to any screen wake, not just TELESIN. Disable it outside case use. The app does not unlock the phone or bypass the PIN. No boot receiver is needed for the tested accessibility activation model; first unlock after reboot was part of the verified Beta 3.1 test.
 
-1. Transfer the APK to the phone and open it. Android may ask you to allow installation from the app you used to open the file.
-2. Open **Camera Wake**.
-3. Pair the case as **TELESIN_SDC** in the phone’s Bluetooth settings.
-4. Under **Listener & setup**, tap **Open Accessibility settings** and enable the **TELESIN Button Lab** listener. If HyperOS blocks it, open Camera Wake’s system app-info page and allow restricted settings before returning to Accessibility settings.
-5. Disable Android battery optimization with the setup button; on HyperOS also select Battery saver → No restrictions. Both setup checks must pass.
-6. Turn on **Enable M1 camera wake** on the main card.
-6. Turn the screen off. Hold M1, then press M1 again to turn the screen off.
+## Build and release
 
-**No key learning is required for the working M1 shortcut.** Turn camera wake off when you finish using the case: while enabled, **any screen wake** can request the camera, including the phone’s Power button or a notification.
+JDK 17, SDK 35, Gradle 8.9. Run `./gradlew assembleDebug lintDebug`. Beta 5: versionCode 35, versionName `3.0-beta5`. The prerelease APK is the same locally debug-signed binary installed for user testing; it is not Play-distributed or production-signed. A CI debug APK may have a different signing key. No signing key or local SDK path is committed.
 
-For ADB installation:
+## Historical implementation
 
-```sh
-adb install -r Camera-Wake-1.1.0.apk
-adb shell am start -n org.telesin.buttonlab/.MainActivity
-```
-
-## How it works
-
-The controller sends a brief hardware Power-key pulse for its wake function. A regular app cannot intercept that as an ordinary held key or emulate a protected double-Power gesture. The enabled Accessibility service observes the screen waking and requests a lock-screen activity, which launches `com.android.camera.Camera` with Android’s secure-camera action when the keyguard is locked.
-
-There is no root, firmware modification, password bypass or private-gallery access. HyperOS must permit the launch. The M1 turn-off behavior comes from the remote itself.
-
-## Button guide and advanced features
-
-A product-photo guide identifies Capture, M1, M2, W and T. The app includes:
-
-- Separate short-press and long-press actions for ordinary learned external keys.
-- Adjustable hold duration, pass-through, ignore, calibrated camera taps and swipes.
-- Per-button resets for learned key, actions and tap position, plus reset all settings.
-- Local camera-wake diagnostics and a camera-launch test.
-
-Expand **Advanced button actions**, **Camera & calibration settings**, or **Diagnostics & resets** to use these tools. Some controller buttons send touch gestures or Power pulses rather than ordinary keys; those cannot be learned by the key listener. The hold-duration selector affects ordinary mapped keys, not the native M1 wake function. Picking a tap position preserves your selected actions.
-
-## Troubleshooting
-
-- **M1 wakes the password screen, but no camera:** confirm both the Accessibility listener and M1 camera-wake switch are enabled. Expand diagnostics and check Camera wake. In HyperOS app permissions, check whether showing on the lock screen or opening windows from the background is blocked.
-- **A button never learns:** it may send a Power pulse or touch gesture. Use the M1 camera-wake mode without learning.
-- **Camera opens on other wake events:** disable M1 camera wake outside case use.
-- **Tap misses a control:** recalibrate in the same screen orientation and camera layout you will use.
-- **Different phone:** compatibility is unverified; secure-camera handling and background launch restrictions vary.
-
-Test on dry land before placing the phone in the case or using it underwater.
-
-## Privacy and permissions
-
-No Internet, camera, Bluetooth-scan, location or storage permission. All preferences and diagnostics stay on the phone. The Accessibility service can observe window state, filter external keys and inject calibrated camera gestures. It is used to operate the camera on your behalf. Disable the listener when you no longer need it.
-
-## Build from source
-
-Requires JDK 17, Android SDK Platform 35, and Android SDK Build-Tools 34 (the Android plugin’s default). Minimum supported Android version: Android 10 / API 29. Gradle 8.9 wrapper and Android Gradle Plugin 8.7.3 are included.
-
-```sh
-export ANDROID_HOME=/path/to/Android/Sdk
-./gradlew assembleDebug lintDebug
-```
-
-Output: `app/build/outputs/apk/debug/app-debug.apk`.
-
-GitHub Actions builds the app and uploads the APK as a free workflow artifact on pushes and pull requests. Workflow-built debug APKs have a different signing key from the downloadable release; they may require uninstalling the release first, which clears settings. The release APK uses the same signing key as the original tested installation.
-
-## Validation
-
-- Gradle build and Android lint pass.
-- The APK was installed and the UI inspected on the tested Xiaomi.
-- The owner verified the M1 screen-off → camera → screen-off flow.
-- Version 1.0.2 restores the original product-photo button guide while preserving the working camera behavior.
-
-## License and attribution
-
-Code and the custom camera-and-wave logo are licensed under **MIT**. The third-party product photograph is excluded from the MIT license; its rights remain with its owner. The Gradle wrapper retains its upstream license notices. TELESIN and Xiaomi names identify compatible hardware; this project is independent and is not endorsed by either company.
-
-Product photo source: [Kareem Stores TELESIN P4-WTP-06 listing](https://kareemstores.com/en/telesin-smartphone-diving-case-with-remote-control-p4-wtp-06-1773945903). The photograph is used as a hardware button reference.
+The `scripts/` directory and [legacy technical notes](LEGACY-DETAILS.md) describe 2.1. Those scripts are not compatible activation steps for the current beta; use the tagged 2.1 release if needed. The old helper used privileged instrumentation to read protected HID reports and translate the Xiaomi’s old layout.

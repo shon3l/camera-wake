@@ -9,8 +9,8 @@ import java.util.Locale;
 /** Preferences and key identity. Buttons are distinguishable only if their key-event identities differ. */
 final class Controls {
     static final String[] SLOTS = {"Capture", "Wide W", "Tele T", "Mode M1", "Mode M2"};
-    static final String[] ACTIONS = {"Pass through", "Ignore", "Tap camera control", "Swipe left", "Swipe right", "Swipe up", "Swipe down", "Launch camera"};
-    static final int PASS = 0, IGNORE = 1, TAP = 2, LEFT = 3, RIGHT = 4, UP = 5, DOWN = 6, WAKE_CAMERA = 7;
+    static final String[] ACTIONS = {"Pass through", "Ignore", "Tap camera control", "Swipe left", "Swipe right", "Swipe up", "Swipe down", "Camera / lock toggle", "Zoom out", "Zoom in"};
+    static final int PASS = 0, IGNORE = 1, TAP = 2, LEFT = 3, RIGHT = 4, UP = 5, DOWN = 6, WAKE_CAMERA = 7, ZOOM_OUT = 8, ZOOM_IN = 9;
     private Controls() { }
 
     static SharedPreferences pref(Context context) {
