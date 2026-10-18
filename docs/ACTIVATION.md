@@ -6,12 +6,13 @@ Follow [the tested V5.7 → V5.9 upgrade](FIRMWARE.md), then forget and re-pair 
 
 ## Install Camera Wake 3.0
 
-1. Download the signed release-candidate APK from [GitHub Releases](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc2). Android may ask to allow installations from your browser/file manager.
+1. Download the signed release-candidate APK from [GitHub Releases](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc3). Android may ask to allow installations from your browser/file manager.
 2. Open **Camera Wake** → **Setup & firmware** → **Enable Accessibility**. Read the explanation, then enable **Camera Wake** in Android’s accessibility services.
 3. If Android blocks a sideloaded service, open Settings → Apps → Camera Wake → menu → **Allow restricted settings**, then return to Accessibility. These are user-consented settings, not ADB activation.
 4. Allow **unrestricted battery use**. On Xiaomi enable autostart/background activity/pop-up permissions if offered. The button opens app settings; labels differ by OS.
 5. Turn on **Wake with M1**. The status shows whether the service and remote input device are connected. No key learning is needed.
-6. Open Camera and test all five controls. Lock the phone; hold M1 to wake Camera, release and wait about two seconds. Hold again to sleep.
+6. In Setup & firmware, green ✓ labels show connected Accessibility, unrestricted battery and the connected TELESIN input device. Amber ! labels indicate attention or a manual check. Firmware/pairing can be marked confirmed by you after checking ReefColor and Bluetooth; the app cannot read the remote firmware. Xiaomi autostart remains a manual check.
+7. Open Camera and test all five controls. Lock the phone; hold M1 to wake Camera, release and wait about two seconds. Hold again to sleep.
 
 After reboot, unlock once with the PIN and let the remote reconnect. No computer or startup script is part of use. Pre-first-unlock operation is unverified. See the [test matrix](COMPATIBILITY.md) for exactly which build passed reboot testing.
 

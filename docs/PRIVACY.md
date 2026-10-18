@@ -10,7 +10,7 @@ The public app **cannot retrieve screen content**, does not perform injected ges
 
 ## Local settings
 
-The wake switch and most recent generic error message are stored in private app preferences. Backup is disabled. Nothing is uploaded or shared automatically. Uninstalling removes these settings. Source-code and firmware-guide buttons open the system browser, whose normal privacy policies apply.
+The wake switch, your manual firmware/pairing confirmation and most recent generic error message are stored in private app preferences. Backup is disabled. Nothing is uploaded or shared automatically. Uninstalling removes these settings. Source-code and firmware-guide buttons open the system browser, whose normal privacy policies apply.
 
 The current public app has no beta diagnostics or Share-report feature. Historical beta releases had broader diagnostic capabilities; their own documentation applies to those builds.
 

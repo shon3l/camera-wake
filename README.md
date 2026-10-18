@@ -6,14 +6,14 @@ A free, open-source companion for the **TELESIN P4-WTP-06 diving phone case**. H
 
 ## Get started
 
-[Download the signed 3.0 release candidate](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc2) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
+[Download the signed 3.0 release candidate](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc3) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
 
 1. Use the official ReefColor app to update the case: the tested path is **V5.7 → V5.9**.
 2. **Forget TELESIN_SDC and pair again** in Android Bluetooth settings after updating. This loads the new control layout.
 3. Install Camera Wake. Enable its Accessibility service, allow unrestricted battery use and Xiaomi autostart/background permissions as needed.
 4. Turn on **Wake with M1**. No button learning or script is needed.
 
-The app keeps the original realistic physical-button guide, with a compact light interface, live setup status and expandable setup. It briefly covers wake/sleep transitions to absorb the remote’s trailing gestures. Allow about two seconds before another action. While wake mode is on, **any screen wake can open Camera**, including phone Power; switch it off after case use.
+The app keeps the original realistic physical-button guide, with a compact underwater interface, live setup status and a separate setup dialog. It briefly covers wake/sleep transitions to absorb the remote’s trailing gestures. Allow about two seconds before another action. While wake mode is on, **any screen wake can open Camera**, including phone Power; switch it off after case use.
 
 ## Compatibility and release status
 

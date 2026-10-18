@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.0-rc3 — underwater, one-screen layout
+
+- Navy/teal water-light backdrop with background-only blur and translucent blue panels.
+- Main page fits the tested Xiaomi portrait screen without scrolling; setup opens separately.
+- Full physical-button photo with cool display tint and fitted rounded corners; no center crop.
+- Setup shows live labelled color states for service, battery and TELESIN connection; firmware confirmation is explicitly manual.
+- Runtime unchanged from physically tested RC1; public-package reboot acceptance still pending.
+
+
 ## 3.0.0-rc2 — visual refinement
 
 - Ocean-toned background and surfaces, pill buttons with pressed ripple states, camera icon, status chip and stronger switch states.

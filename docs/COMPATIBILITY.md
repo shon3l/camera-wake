@@ -11,6 +11,7 @@
 | Galaxy S22+ / Android 16 | Legacy 2.1 tested. V5.9 plus Beta 5 not tested. |
 | Polished 3.0 RC1 (`org.telesin.camerawake`) | Release build/lint and timing regression checks pass. User confirmed all controls and wake/sleep with the new service enabled and Beta disabled. Reboot test on the public package remains pending. |
 | Public RC2 visual refinement | UI-only changes on RC1 runtime; debug/release build and lint pass. Public-package reboot/USB-unplugged test pending. |
+| Public RC3 underwater layout | Release build/lint pass. Main page visually checked on the Xiaomi portrait display; no scrolling, fitted full photo, separate setup dialog. Runtime unchanged from RC1. Public-package reboot/USB-unplugged test pending. |
 | Other phones, remotes, firmware, camera apps | Unverified. |
 
 Tests used the stock Xiaomi Camera. This does not establish behavior in every camera mode/orientation or long-term background survival. Before-first-unlock operation, interrupted firmware updates and firmware rollback are untested. The black transition guard is a workaround for a remote macro, not prevention of system Power events.
