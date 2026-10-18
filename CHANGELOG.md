@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.0.0-rc1 — public release candidate
+
+- Compact light interface with the original realistic physical-button reference, larger photo and expandable setup.
+- Dedicated public package and private release signing key.
+- Retain Beta 5 wake/sleep timings; remove all mapping and Bluetooth diagnostics.
+- Remove screen-content retrieval, gesture injection and Bluetooth permission.
+- Pause immediately cancels pending transitions; clearer setup status and generic errors.
+- Add wake-policy regression checks, public upgrade/privacy/release documentation.
+- Physical acceptance of the new service and reboot behavior remains pending.
+
+
 ## 3.0 Beta 5 — 2026-10-18
 
 - New separate beta app using public Android APIs without ADB activation.

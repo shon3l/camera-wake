@@ -1,17 +1,32 @@
 plugins { id 'com.android.application' }
 
+def signingReady = ['CAMERA_WAKE_KEYSTORE', 'CAMERA_WAKE_STORE_PASSWORD', 'CAMERA_WAKE_KEY_ALIAS', 'CAMERA_WAKE_KEY_PASSWORD'].every { System.getenv(it) }
 android {
     namespace 'org.telesin.buttonlab'
     compileSdk 35
-
     defaultConfig {
-        applicationId 'org.telesin.camerawake.beta'
+        applicationId 'org.telesin.camerawake'
         minSdk 33
         targetSdk 35
-        versionCode 35
-        versionName '3.0-beta5'
+        versionCode 100
+        versionName '3.0.0-rc1'
     }
-
+    signingConfigs {
+        if (signingReady) {
+            release {
+                storeFile file(System.getenv('CAMERA_WAKE_KEYSTORE'))
+                storePassword System.getenv('CAMERA_WAKE_STORE_PASSWORD')
+                keyAlias System.getenv('CAMERA_WAKE_KEY_ALIAS')
+                keyPassword System.getenv('CAMERA_WAKE_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (signingReady) signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17

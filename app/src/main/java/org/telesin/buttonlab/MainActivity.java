@@ -1,58 +1,108 @@
 package org.telesin.buttonlab;
+
 import android.app.Activity;
-import android.content.*;
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
-import android.os.*;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
+import android.view.View;
+import android.view.WindowInsets;
 import android.widget.*;
 
+/** The original light Camera Wake layout, with a short guided setup. */
 public final class MainActivity extends Activity {
- private LinearLayout layout; private TextView status,log; private final Handler handler=new Handler(Looper.getMainLooper());
- private final Runnable refresh=new Runnable(){public void run(){
-  status.setText(MappingService.instance==null?"Setup needed: enable Camera Wake Beta in Accessibility":"Accessibility connected • no ADB activation");
-  log.setText(Controls.pref(MainActivity.this).getString("wake_status", "")+"\n"+Controls.pref(MainActivity.this).getString("last_event", "")+"\n\n"+Controls.pref(MainActivity.this).getString("beta_log", "No remote events recorded yet."));handler.postDelayed(this,1000);
- }};
- @Override public void onCreate(Bundle state){super.onCreate(state);
-  if(!Controls.pref(this).contains("beta_initialized")) Controls.pref(this).edit().putBoolean("beta_initialized",true).putBoolean("native_controls",false).putString("camera_package",Build.MANUFACTURER.equalsIgnoreCase("samsung")?"com.sec.android.app.camera":"com.android.camera").apply();
-  getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-  ScrollView scroll=new ScrollView(this);layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);layout.setPadding(24,24,24,24);scroll.addView(layout);
-  scroll.setOnApplyWindowInsetsListener((view,insets)->{android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;});
-  setContentView(scroll);scroll.requestApplyInsets();
-  text("Camera Wake 3.0 Beta 5",24);status=text("",17);
-  text("Goal: all remote controls without ADB. This beta tests which TELESIN events Android exposes. Pair the remote in Bluetooth settings. Stop the old Camera Wake helper before testing.",16);
-  button("Test vendor Bluetooth channel",()->startActivity(new Intent(this,VendorProbeActivity.class)));
-  button("1. Enable Accessibility",()->startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
-  text("If activation is blocked: Settings → Apps → Camera Wake Beta → menu → Allow restricted settings, then enable Accessibility. On Xiaomi also allow autostart and background pop-ups if offered.",14);
-  button("2. Allow unrestricted battery",()->{if(!Controls.batteryReady(this))startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,Uri.parse("package:"+getPackageName())));else toast("Battery exemption already enabled");});
-  button("App settings / autostart",()->startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))));
-  Switch wake = new Switch(this);wake.setText("Enable camera on screen wake");wake.setChecked(Controls.pref(this).getBoolean("camera_on_wake",false));wake.setOnCheckedChangeListener((view,enabled)->Controls.pref(this).edit().putBoolean("camera_on_wake",enabled).apply());layout.addView(wake);
-  text("Previously tested M1 wake mode: hold M1 from screen off to open Camera. This opens Camera after ANY screen wake, including the phone Power button; disable it after case use. No key learning required.",14);
-  button("Open Camera now",()->{if(service())MappingService.instance.requestWakeCamera("on-device test");});
-  button("Test Camera after 10 seconds",()->{if(service()){Controls.pref(this).edit().putLong("diagnostic_until",System.currentTimeMillis()+120000).apply();MappingService.instance.scheduleCameraTest();toast("Lock phone now. Camera request in 10 seconds.");}});
-  button("Lock screen now",()->{if(service())BetaLog.add(this,"Manual lock accepted="+MappingService.instance.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN));});
-  text("Learn buttons with this app visible. Learning captures the next external key for 15 seconds. Buttons that send only touch or system Power reports may not be learnable. Unmapped keys pass through.",16);
-  for(int slot:Controls.DISPLAY_ORDER){final int index=slot;text(Controls.SLOTS[slot],20);
-   button("Learn "+Controls.SLOTS[slot],()->{if(service()){Controls.pref(this).edit().putInt("learning_slot",index).putLong("learning_deadline",System.currentTimeMillis()+15000).apply();toast("Press "+Controls.SLOTS[index]+" now");}});
-   selector(index,"action","Short press",Controls.PASS);selector(index,"long_action","Hold",index==3?Controls.WAKE_CAMERA:Controls.PASS);
-   button("Pick camera tap target",()->{if(service()){MappingService.instance.requestWakeCamera("calibration");MappingService.instance.pickTapPosition(index);}});
-  }
-  button("Record pointer reports for 60 seconds",()->{if(service()){MappingService.instance.startPointerDiagnostic();toast("Pointer input paused for 60 seconds. Test remote buttons now; normal input returns automatically.");}});
-  button("Test remote touch reports",()->startActivity(new Intent(this,MotionProbeActivity.class)));
-  button("Record remote events for 2 minutes",()->{Controls.pref(this).edit().putLong("diagnostic_until",System.currentTimeMillis()+120000).apply();BetaLog.add(this,"Remote diagnostic started for 2 minutes");toast("Test buttons unlocked, locked and screen off; return here to share results.");});
-  button("Share diagnostic report",()->{String report="Camera Wake 3.0-beta2\n"+Build.MANUFACTURER+" "+Build.MODEL+" Android "+Build.VERSION.RELEASE+"\nAccessibility connected="+(MappingService.instance!=null)+"\nBattery exempt="+Controls.batteryReady(this)+"\n"+mappingReport()+"Vendor Bluetooth diagnostic:\n"+Controls.pref(this).getString("vendor_probe", "Not run")+"\nTouch diagnostic:\n"+Controls.pref(this).getString("motion_probe", "Not run")+"\n"+Controls.pref(this).getString("wake_status","")+"\n"+Controls.pref(this).getString("last_event","")+"\n"+Controls.pref(this).getString("beta_log","");Intent send=new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT,report);startActivity(Intent.createChooser(send,"Share beta results"));});
-  button("Clear diagnostic log",()->Controls.pref(this).edit().remove("beta_log").remove("last_event").remove("wake_status").apply());
-  button("Stop beta",()->{if(service())MappingService.instance.disableSelf();});log=text("",13);
- }
- private void selector(int slot,String key,String label,int fallback){text(label,14);Spinner spinner=new Spinner(this);spinner.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,Controls.ACTIONS));String pref=Controls.prefix(slot)+key;int value=Controls.pref(this).getInt(pref,fallback);Controls.pref(this).edit().putInt(pref,value).apply();spinner.setSelection(value);spinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onNothingSelected(android.widget.AdapterView<?> p){}public void onItemSelected(android.widget.AdapterView<?> p,android.view.View v,int position,long id){Controls.pref(MainActivity.this).edit().putInt(pref,position).apply();}});layout.addView(spinner);}
- private String mappingReport(){
-  StringBuilder result=new StringBuilder("Camera package="+Controls.pref(this).getString("camera_package","")+"\nUptime milliseconds="+SystemClock.elapsedRealtime()+"\n");
-  for(int slot:Controls.DISPLAY_ORDER){String pre=Controls.prefix(slot);result.append(Controls.SLOTS[slot]).append(": learned=").append(Controls.isLearned(Controls.pref(this),slot)).append(" code=").append(Controls.pref(this).getInt(pre+"code",-1)).append(" scan=").append(Controls.pref(this).getInt(pre+"scan",-1)).append(" device=").append(Controls.pref(this).getString(pre+"device","")).append(" short=").append(Controls.pref(this).getInt(pre+"action",0)).append(" hold=").append(Controls.pref(this).getInt(pre+"long_action",0)).append("\n");}
-  return result.toString();
- }
- private boolean service(){if(MappingService.instance!=null)return true;toast("Enable Camera Wake Beta in Accessibility first");return false;}
- private TextView text(String value,int size){TextView view=new TextView(this);view.setText(value);view.setTextSize(size);view.setPadding(0,12,0,12);layout.addView(view);return view;}
- private void button(String label,Runnable action){Button button=new Button(this);button.setText(label);button.setOnClickListener(v->action.run());layout.addView(button);}
- private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
- @Override protected void onResume(){super.onResume();handler.post(refresh);}
- @Override protected void onPause(){handler.removeCallbacks(refresh);super.onPause();}
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private TextView status, detail;
+    private Switch wake;
+    private final Runnable refresh = new Runnable() {
+        @Override public void run() { updateStatus(); handler.postDelayed(this, 1000); }
+    };
+    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+    private LinearLayout column() { LinearLayout view = new LinearLayout(this); view.setOrientation(LinearLayout.VERTICAL); return view; }
+    private TextView text(LinearLayout parent, String label, int size, int color) {
+        TextView view = new TextView(this); view.setText(label); view.setTextSize(size); view.setTextColor(color);
+        view.setPadding(0, dp(3), 0, dp(3)); parent.addView(view); return view;
+    }
+    private LinearLayout card(LinearLayout parent) {
+        LinearLayout view = column(); view.setPadding(dp(12), dp(10), dp(12), dp(10));
+        GradientDrawable bg = new GradientDrawable(); bg.setColor(Color.WHITE); bg.setCornerRadius(dp(20)); view.setBackground(bg);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2); params.topMargin = dp(8); parent.addView(view, params); return view;
+    }
+    private void button(LinearLayout parent, String label, Runnable action, boolean primary) {
+        Button view = new Button(this); view.setText(label); view.setAllCaps(false); view.setTextSize(16); view.setMinHeight(dp(48));
+        view.setTextColor(primary ? Color.WHITE : Color.rgb(27, 63, 75));
+        GradientDrawable bg = new GradientDrawable(); bg.setColor(primary ? Color.rgb(25, 100, 113) : Color.rgb(232, 241, 244)); bg.setCornerRadius(dp(14));
+        view.setBackground(bg); LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2); params.topMargin = dp(5); parent.addView(view, params);
+        view.setOnClickListener(v -> action.run());
+    }
+    @Override public void onCreate(Bundle state) {
+        super.onCreate(state);
+        ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setBackgroundColor(Color.rgb(244,247,249));
+        LinearLayout page = column(); page.setPadding(dp(16),dp(8),dp(16),dp(12)); scroll.addView(page);
+        scroll.setOnApplyWindowInsetsListener((view, insets) -> {
+            android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+            view.setPadding(bars.left,bars.top,bars.right,bars.bottom); return insets;
+        });
+        setContentView(scroll); scroll.requestApplyInsets();
+        LinearLayout header = new LinearLayout(this); header.setGravity(android.view.Gravity.CENTER_VERTICAL); page.addView(header);
+        TextView title = new TextView(this); title.setText("Camera Wake"); title.setTextSize(26); title.setTextColor(Color.rgb(27,43,54)); title.setTypeface(null,Typeface.BOLD);
+        header.addView(title,new LinearLayout.LayoutParams(0,dp(40),1));
+        TextView version = new TextView(this); version.setText("3.0 · FREE"); version.setTextSize(12); version.setTextColor(Color.rgb(25,100,113)); header.addView(version);
+        LinearLayout hero = card(page);
+        status = text(hero,"Checking setup…",16,Color.rgb(25,100,113)); status.setTypeface(null,Typeface.BOLD);
+        detail = text(hero,"",12,Color.rgb(92,109,119));
+        ImageView illustration = new ImageView(this); illustration.setImageResource(R.drawable.controller_reference);
+        illustration.setContentDescription("Diving phone case with M1, M2, Capture, W and T buttons");
+        illustration.setScaleType(ImageView.ScaleType.FIT_CENTER); illustration.setAdjustViewBounds(true); hero.addView(illustration,new LinearLayout.LayoutParams(-1,-2));
+        wake = new Switch(this); wake.setText("Wake with M1"); wake.setTextSize(17); wake.setTextColor(Color.rgb(27,43,54)); wake.setMinHeight(dp(48));
+        wake.setChecked(Controls.enabled(this)); hero.addView(wake);
+        wake.setOnCheckedChangeListener((view, enabled) -> {
+            Controls.pref(this).edit().putBoolean("camera_on_wake",enabled).remove("status_message").apply();
+            if (WakeService.instance != null) WakeService.instance.cancelTransitions();
+            updateStatus();
+        });
+        text(hero,"Hold M1 to wake or sleep. Allow two seconds between actions.\nAlso opens Camera on phone Power; switch off after case use.",12,Color.rgb(92,109,119));
+        button(hero,"Open Camera",() -> { if (!CameraLauncher.open(this)) toast("No compatible Camera app found."); },true);
+        LinearLayout setup = card(page);
+        Button setupToggle = new Button(this); setupToggle.setAllCaps(false); setupToggle.setTextSize(15); setupToggle.setText("Setup & firmware  ▾"); setupToggle.setMinHeight(dp(48)); setupToggle.setTextColor(Color.rgb(25,100,113)); setupToggle.setGravity(android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.START); setupToggle.setPadding(dp(4),0,dp(4),0); setupToggle.setBackgroundColor(Color.TRANSPARENT);
+        setup.removeAllViews(); setup.addView(setupToggle);
+        LinearLayout setupBody = column(); setup.addView(setupBody);
+        setupBody.setVisibility(WakeService.instance == null ? View.VISIBLE : View.GONE);
+        setupToggle.setText(WakeService.instance == null ? "Setup & firmware  ▴" : "Setup & firmware  ▾");
+        setupToggle.setOnClickListener(v -> { boolean opening = setupBody.getVisibility() != View.VISIBLE; setupBody.setVisibility(opening ? View.VISIBLE : View.GONE); setupToggle.setText(opening ? "Setup & firmware  ▴" : "Setup & firmware  ▾"); });
+        text(setupBody,"1  Update the case in ReefColor: tested V5.7 → V5.9.\n2  Forget TELESIN_SDC in Bluetooth settings, then pair again.\n3  Allow Accessibility and unrestricted battery use below.",16,Color.rgb(27,43,54));
+        button(setupBody,"Firmware & pairing guide",() -> openUrl("https://github.com/shon3l/camera-wake/blob/main/docs/FIRMWARE.md"),false);
+        button(setupBody,"Enable Accessibility",() -> new AlertDialog.Builder(this).setTitle("Allow Camera Wake")
+            .setMessage("Camera Wake uses Accessibility to open secure Camera, cover the remote’s trailing touch gestures and turn the screen off. It does not read screen content. Normal remote controls work without this permission.\n\nEnable Camera Wake in the next screen. If Android blocks it, allow restricted settings in the app’s system settings first.")
+            .setPositiveButton("Open settings",(dialog,which) -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)))
+            .setNegativeButton("Cancel",null).show(),false);
+        button(setupBody,"Allow unrestricted battery use",() -> {
+            if (Controls.batteryReady(this)) toast("Unrestricted battery use is already enabled.");
+            else try { startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,Uri.parse("package:"+getPackageName()))); }
+            catch (RuntimeException missing) { appSettings(); }
+        },false);
+        button(setupBody,"App settings / Xiaomi autostart",this::appSettings,false);
+        text(setupBody,"After a reboot, unlock once with your PIN and let the remote reconnect. No computer or startup script is needed. Tested with Xiaomi 17 Ultra; other phones are unverified.",14,Color.rgb(92,109,119));
+        TextView footer = text(page,"Free · No ads or tracking     Privacy & source ↗",12,Color.rgb(92,109,119));
+        footer.setMinHeight(dp(40)); footer.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        footer.setOnClickListener(v -> openUrl("https://github.com/shon3l/camera-wake"));
+    }
+    private void updateStatus() {
+        if (status == null) return;
+        boolean service = WakeService.instance != null;
+        status.setText(!service ? "Setup needed · Accessibility" : !Controls.enabled(this) ? "Camera wake paused" : !Controls.remoteConnected() ? "Waiting for TELESIN" : "Ready · TELESIN connected");
+        String error = Controls.pref(this).getString("status_message", "");
+        detail.setText(!error.isEmpty() ? error : !service ? "Enable Camera Wake in Accessibility settings below." : !Controls.batteryReady(this) ? "Allow unrestricted battery use for reliable background operation." : Controls.enabled(this) ? "No ADB activation · native camera controls" : "Normal remote camera controls still work.");
+    }
+    private void toast(String message) { Toast.makeText(this,message,Toast.LENGTH_LONG).show(); }
+    private void appSettings() { startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))); }
+    private void openUrl(String url) { try { startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url))); } catch (RuntimeException missing) { toast("Open github.com/shon3l/camera-wake in a browser."); } }
+    @Override protected void onResume() { super.onResume(); handler.removeCallbacks(refresh); handler.post(refresh); }
+    @Override protected void onPause() { handler.removeCallbacks(refresh); super.onPause(); }
 }

@@ -1,0 +1,38 @@
+name: Report a compatibility problem
+description: Help improve Camera Wake without sharing personal data.
+body:
+  - type: markdown
+    attributes:
+      value: "Please omit serial numbers, Bluetooth addresses, photos and full phone logs. Describe only the affected controls."
+  - type: input
+    id: app
+    attributes:
+      label: Camera Wake version
+      placeholder: 3.0.0-rc1
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone model and Android / OS version
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Remote model and firmware version
+  - type: checkboxes
+    id: setup
+    attributes:
+      label: Setup checks
+      options:
+        - label: I forgot and re-paired TELESIN after updating firmware.
+        - label: I enabled the public app service and disabled the beta / old helper.
+        - label: I allowed unrestricted battery use.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happens, and what did you expect?
+      description: Include which buttons work, whether the screen is locked, and steps to reproduce. No personal recordings are needed.
+    validations:
+      required: true

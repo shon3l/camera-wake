@@ -8,3 +8,8 @@
 *.apk
 *.aab
 .DS_Store
+
+*.p12
+*.pem
+*.env
+/signing/

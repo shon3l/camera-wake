@@ -1,37 +1,42 @@
 # Camera Wake
 
-Use a TELESIN P4-WTP-06 diving case remote to wake Xiaomi Camera, switch modes, zoom and capture — **without ADB activation or root**.
+A free, open-source companion for the **TELESIN P4-WTP-06 diving phone case**. Hold M1 to wake Xiaomi Camera; hold again to turn the screen off. Native M1/M2, W/T and Capture controls handle modes, zoom and capture.
 
-## Recommended Xiaomi beta
+**No ADB activation, root, account, ads or tracking.**
 
-[Download Camera Wake 3.0 Beta 5](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-beta.5). Tested on **Xiaomi 17 Ultra, Android 17, HyperOS OS3.0.336.0.XPAEUXM**, with remote firmware **V5.9**.
+## Get started
 
-1. Update the remote **V5.7 → V5.9** using the official ReefColor app. This is the exact tested upgrade; other starting versions are unverified. [Firmware instructions](docs/FIRMWARE.md).
-2. **Forget TELESIN_SDC and pair it again** in Android Bluetooth settings after updating. Android otherwise retains the old input description.
-3. Install the beta APK. It is a separate app from Camera Wake 2.1. Stop the old helper and disable any other Camera Wake accessibility service before testing. Uninstall the old app if you no longer need it.
-4. Enable **Camera Wake Beta** in Accessibility, allow unrestricted battery use, and allow Xiaomi autostart/background activity as offered. Enable **camera on screen wake** in the app. [Full setup](docs/ACTIVATION.md).
-5. No button learning or script is needed. Hold M1 to open Camera; hold again to sleep. Short M1/M2 switch modes, W/T zoom, Capture takes a photo or controls video.
+[Download the signed 3.0 release candidate](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc1) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
 
-The app briefly covers wake/sleep transitions with a black input guard to absorb the remote’s built-in gesture sequence. Allow about two seconds before the next control. Camera-on-wake also reacts to the phone Power button and other screen wakes; turn it off after case use.
+1. Use the official ReefColor app to update the case: the tested path is **V5.7 → V5.9**.
+2. **Forget TELESIN_SDC and pair again** in Android Bluetooth settings after updating. This loads the new control layout.
+3. Install Camera Wake. Enable its Accessibility service, allow unrestricted battery use and Xiaomi autostart/background permissions as needed.
+4. Turn on **Wake with M1**. No button learning or script is needed.
 
-## What is verified
+The app keeps the original realistic physical-button guide, with a compact light interface, live setup status and expandable setup. It briefly covers wake/sleep transitions to absorb the remote’s trailing gestures. Allow about two seconds before another action. While wake mode is on, **any screen wake can open Camera**, including phone Power; switch it off after case use.
 
-All five regular controls and long-M1 wake/sleep were confirmed on Beta 5. Reboot, first PIN unlock and USB-disconnected operation without launching the app or running a script were confirmed on Beta 3.1. Beta 5 keeps that activation model but **has not repeated the reboot test**. This is a device-tested beta, not a universal compatibility claim. [Test matrix and limitations](docs/COMPATIBILITY.md).
+## Compatibility and release status
 
-## Video walkthrough
+The verified hardware baseline is **Xiaomi 17 Ultra, Android 17 / HyperOS OS3.0.336.0.XPAEUXM**, stock Xiaomi Camera, P4-WTP-06 firmware V5.9 after fresh pairing. Beta 5 controls/transitions were physically confirmed; Beta 3.1 passed reboot + first PIN unlock + USB-unplugged testing. The polished 3.0 release candidate has a smaller permission surface and new application identity; its own physical/reboot acceptance is recorded in the [test matrix](docs/COMPATIBILITY.md).
 
-[![Illustrative demo — no phone footage](docs/demo/poster.png)](docs/demo/camera-wake-beta5-demo.mp4)
+This is a release candidate until those checks pass. Other phones and firmware versions are unverified. [Limitations and technical behavior](docs/DETAILS.md).
 
-[Watch/download the privacy-safe animated walkthrough](docs/demo/camera-wake-beta5-demo.mp4) · [Transcript and provenance](docs/demo/README.md).
+## Upgrading from beta or 2.1
 
-The video is an illustration of setup and tested controls, **not footage of a phone or a live test**. It contains no camera preview, gallery, notifications, device identifiers or user recordings.
+The public app is **Camera Wake** (`org.telesin.camerawake`). It installs separately from **Camera Wake Beta** and the ADB-based 2.1 app. Enable the new app’s service and switch; settings are separate. Disable the old service/helper before testing and uninstall old versions once the replacement works. [Upgrade guide](docs/ACTIVATION.md).
 
-## Older firmware and Samsung
+Legacy [2.1](https://github.com/shon3l/camera-wake/releases/tag/v2.1.0) and [Beta 5](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-beta.5) remain available. Samsung was tested only with the legacy workflow, not this public app.
 
-[Camera Wake 2.1](https://github.com/shon3l/camera-wake/releases/tag/v2.1.0) remains available with its ADB-started helper. Samsung Galaxy S22+ was tested on that release; the V5.9/Beta 5 combination has not been tested on Samsung. [Legacy activation](docs/LEGACY-ACTIVATION.md).
+## Demo
 
-## Build and development
+[![Illustrative walkthrough — no phone footage](docs/demo/poster.png)](docs/demo/camera-wake-beta5-demo.mp4)
 
-JDK 17 and Android SDK 35: `./gradlew assembleDebug lintDebug`. The beta uses application ID `org.telesin.camerawake.beta`; the old app uses `org.telesin.buttonlab`. CI builds are debug-signed and may need an uninstall before replacing a build signed by a different key. Release APK signing details and known limitations are in [technical notes](docs/DETAILS.md).
+[Watch the privacy-safe video](docs/demo/camera-wake-beta5-demo.mp4). This animation illustrates the Beta 5 setup/control behavior shared by 3.0; it does not show the polished interface or a live phone test. No phone footage or personal data is used. [Transcript](docs/demo/README.md).
 
-[Changelog](CHANGELOG.md) · [Privacy](docs/PRIVACY.md) · [Third-party notices](THIRD_PARTY_NOTICES.md). Code and generated video artwork: MIT. Unaffiliated with TELESIN or Xiaomi.
+## Build, licensing and privacy
+
+JDK 17, SDK 35: `./gradlew assembleDebug assembleRelease lintDebug lintRelease`. Regression checks: `python3 scripts/test-policy.py`. [Signing and release process](docs/RELEASING.md).
+
+Code/logo: **MIT**, no charge. The realistic product reference photo has separate rights and attribution in [third-party notices](THIRD_PARTY_NOTICES.md); it is not relicensed under MIT. [Privacy](docs/PRIVACY.md) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/shon3l/camera-wake/issues).
+
+Unaffiliated with TELESIN or Xiaomi. GitHub APK distribution; no Play Store listing is claimed.

@@ -1,21 +1,38 @@
-# Beta setup without ADB activation
+# Setup and upgrades
 
-First complete [V5.7 → V5.9 firmware setup and fresh pairing](FIRMWARE.md). The tested phone is the Xiaomi 17 Ultra; see [compatibility](COMPATIBILITY.md).
+## Firmware first
 
-1. Install the Beta 5 APK from the tagged GitHub prerelease. Existing beta installations with the same signing key keep settings. It installs separately from Camera Wake 2.1.
-2. Stop the old 2.1 helper using its Stop control. Do not run `start.sh`, `start-xiaomi.sh` or `start-s22.sh` for this beta. Uninstall 2.1 if it is no longer needed; do not leave multiple Camera Wake services enabled.
-3. Open Camera Wake Beta → Enable Accessibility. Enable **Camera Wake Beta — remote controls**. If Android blocks a sideloaded service, use Settings → Apps → Camera Wake Beta → menu → Allow restricted settings, then return to Accessibility.
-4. Allow unrestricted battery use. On Xiaomi allow autostart and background pop-up/activity permissions if offered. Labels vary by OS build.
-5. Enable **camera on screen wake**. No learning or mapping is needed with V5.9’s native controls. Diagnostic and mapping controls remain available in this experimental beta; avoid learning native working buttons.
-6. Open Camera and test M1/M2/W/T/Capture. From screen-off hold M1 to wake Camera, release and wait for the transition; hold again to sleep.
+Follow [the tested V5.7 → V5.9 upgrade](FIRMWARE.md), then forget and re-pair **TELESIN_SDC**. Confirm M1/M2/W/T/Capture work natively in Xiaomi Camera before configuring wake behavior.
 
-After reboot, unlock once with the PIN and let the remote reconnect. The user confirmed no script/app reopening was required on Beta 3.1; repeat that check when testing Beta 5. Operation before the first unlock is unverified. The remote connects to one phone at a time.
+## Install Camera Wake 3.0
+
+1. Download the signed release-candidate APK from [GitHub Releases](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc1). Android may ask to allow installations from your browser/file manager.
+2. Open **Camera Wake** → **Setup & firmware** → **Enable Accessibility**. Read the explanation, then enable **Camera Wake** in Android’s accessibility services.
+3. If Android blocks a sideloaded service, open Settings → Apps → Camera Wake → menu → **Allow restricted settings**, then return to Accessibility. These are user-consented settings, not ADB activation.
+4. Allow **unrestricted battery use**. On Xiaomi enable autostart/background activity/pop-up permissions if offered. The button opens app settings; labels differ by OS.
+5. Turn on **Wake with M1**. The status shows whether the service and remote input device are connected. No key learning is needed.
+6. Open Camera and test all five controls. Lock the phone; hold M1 to wake Camera, release and wait about two seconds. Hold again to sleep.
+
+After reboot, unlock once with the PIN and let the remote reconnect. No computer or startup script is part of use. Pre-first-unlock operation is unverified. See the [test matrix](COMPATIBILITY.md) for exactly which build passed reboot testing.
+
+## Replace beta or 2.1
+
+- Public app: `org.telesin.camerawake`, label **Camera Wake**.
+- Beta: `org.telesin.camerawake.beta`, label **Camera Wake Beta**.
+- Legacy 2.1: `org.telesin.buttonlab`, also labelled **Camera Wake**.
+
+The public app uses a dedicated release key and installs separately. Settings do not migrate. Disable Beta’s accessibility service and stop/uninstall the legacy helper before testing the new service. Enable the public app’s own service and **Wake with M1** switch. Once verified, uninstall the two old apps. Keep ReefColor if you want future firmware updates; it is not needed during everyday camera control.
+
+## Pause or remove
+
+Turn **Wake with M1** off to stop automatic camera opening and transition interception immediately. Native remote controls still work. To disable the service entirely, use Android Accessibility settings; uninstalling also removes its private settings. It is not a device administrator.
 
 ## Troubleshooting
 
-- **Ordinary controls fail after firmware update:** forget and re-pair TELESIN_SDC. Do not clear all Bluetooth data or other pairings.
-- **Native controls work but wake fails:** check the wake switch, accessibility connection and Xiaomi background restrictions. Open the beta once after installation.
-- **Brief Camera flash or unexpected mode during transition:** ensure Beta 5 is installed; its temporary guard covers the remote’s trailing gestures. Allow roughly two seconds between actions.
-- **Camera opens on phone Power or another wake:** expected while camera-on-wake is enabled. Disable it after using the case.
-- **Intentional very quick sleep/wake is ignored:** wakes within 800 ms are classified as bounce. Wait before waking again.
-- **Need the original setup:** use the separate [2.1 release and legacy instructions](LEGACY-ACTIVATION.md). Do not treat that helper as Beta 5 activation.
+- Native buttons fail after update: forget and re-pair only TELESIN_SDC; do not clear all Bluetooth data.
+- Wake fails: check that **the new app’s** service is enabled, not just Beta; then check its switch and background restrictions.
+- Phone Power opens Camera: expected while wake mode is on. Switch off after case use.
+- Very fast sleep/wake is ignored: wakes within 800 ms are treated as remote bounce.
+- Short black transition: expected; it absorbs the remote’s trailing swipe/key sequence.
+- Camera or overlay error: an actionable message appears in the app. A timed guard is removed even if launch fails.
+- Native controls work without wake mode or Accessibility: expected; V5.9 supplies those through Android HID.

@@ -1,4 +1,3 @@
 <resources>
-    <string name="accessibility_service_description">Identify TELESIN Bluetooth key presses, remap camera controls and experimentally open the camera over the lock screen. Works locally; no internet or recordings. Enable only when needed.</string>
-    <string name="wake_service_description">Opens the secure camera when the screen wakes. Does not read screen content, filter keys or inject gestures.</string>
+    <string name="accessibility_service_description">Opens secure Camera when the screen wakes, covers trailing remote gestures and restores screen-off after a remote wake bounce. Filters only TELESIN keys during the brief transition. Does not read screen content or record camera images. Enable camera wake only while using the case.</string>
 </resources>

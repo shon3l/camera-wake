@@ -1,27 +1,29 @@
-# Technical notes: no-ADB beta
+# 3.0 implementation and limitations
 
-## Architecture
+The public app uses application ID `org.telesin.camerawake`. Ordinary mode/zoom/capture commands travel directly from firmware V5.9 through Android’s HID handling. The app has no Bluetooth runtime permission, GATT client, instrumentation, root path or input-injection permission.
 
-Application ID: `org.telesin.camerawake.beta`; namespace: `org.telesin.buttonlab`. A user-enabled accessibility service observes screen transitions, launches the secure Camera while locked, and requests the public accessibility screen-lock action to correct rapid wake bounce. V5.9 plus a fresh Bluetooth pairing provides the ordinary controls through Android’s native HID handling.
+A user-enabled `WakeService` listens for screen on/off. It retains Beta 5’s measured timing:
 
-The current manifest registers **no instrumentation**. There is no system UID, adopted privileged permission, `INJECT_EVENTS`, root requirement or startup script. Bluetooth diagnostics request ordinary `BLUETOOTH_CONNECT`; they are not the runtime control path. The app includes diagnostic/mapping tools retained from testing, but working native buttons require no learning.
+- Screen-off cancels a pending launch and displays a temporary black accessibility overlay, timed out after 1600 ms.
+- Screen-on within 800 ms of sleep is treated as bounce and corrected immediately with the public accessibility lock action.
+- Genuine screen-on displays the input guard, waits 1600 ms, opens secure Camera if locked, then removes the guard after another 250 ms.
+- Guard fallback timeout is 2200 ms. Pause, interrupt and service destruction cancel pending work and remove the guard. A window-add failure cannot leave an indefinite blocking overlay.
+- While guarded, only TELESIN key callbacks are consumed; other keys pass through. The full-screen overlay briefly absorbs touch. Normal native controls pass outside transitions.
 
-## Wake/sleep sequence
+The recorded long-M1 sequence was a Power pulse, a swipe around 650 ms later and another consumer key around 1400 ms later. Power is handled by Android system policy; the app reacts to its screen transition, rather than preventing the wake. A perfectly flash-free result is not guaranteed on every OS.
 
-Long M1 was observed to emit a Power pulse, a touchscreen swipe about 650 ms later, and a consumer key around 1400 ms later. Android handles Power in system policy before normal app dispatch. A normal app cannot reliably consume it through accessibility on this phone.
+## Reduced permission surface
 
-- Screen-off cancels pending automatic Camera launches and shows a temporary black accessibility overlay.
-- A wake within **800 ms** of sleep is treated as bounce and immediately corrected with `GLOBAL_ACTION_LOCK_SCREEN`.
-- A genuine wake shows a temporary black input guard, waits **1600 ms**, launches Camera directly, then removes the guard **250 ms** later.
-- The guard absorbs touches and TELESIN key callbacks while present. It has a timeout, and cleanup runs on service destruction/cancellation. It can briefly block intentional input during transition.
-- Normal native controls pass through outside the guard. A brief residual system transition remains possible; this is reactive handling, not a firmware-level fix.
+Accessibility cannot retrieve window content and has no gesture-injection capability. Its only optional capability is key filtering for the short guard. `onAccessibilityEvent` does not inspect events. There are no remote key logs, mapping tools, pointer diagnostics, vendor Bluetooth probes, camera/microphone/storage/location/Internet permissions, analytics SDKs or ads.
 
-Camera-on-wake responds to any screen wake, not just TELESIN. Disable it outside case use. The app does not unlock the phone or bypass the PIN. No boot receiver is needed for the tested accessibility activation model; first unlock after reboot was part of the verified Beta 3.1 test.
+The normal Android camera app owns capture and storage. Camera Wake never unlocks the phone. On the tested Xiaomi, the main Camera component is explicit to avoid a secure-camera chooser. Other manufacturers use the standard intent and are unverified.
 
-## Build and release
+## Boundaries
 
-JDK 17, SDK 35, Gradle 8.9. Run `./gradlew assembleDebug lintDebug`. Beta 5: versionCode 35, versionName `3.0-beta5`. The prerelease APK is the same locally debug-signed binary installed for user testing; it is not Play-distributed or production-signed. A CI debug APK may have a different signing key. No signing key or local SDK path is committed.
+Wake mode reacts to **all** screen wakes, not exclusively remote Power. It can open Camera on phone Power or another wake source and can treat an intentional sub-800-ms wake as bounce. Turn it off after case use. The app is not an underwater safety device. Firmware rollback, interrupted update recovery, other camera layouts and long-term background reliability have not been established.
 
-## Historical implementation
+## Regression checks
 
-The `scripts/` directory and [legacy technical notes](LEGACY-DETAILS.md) describe 2.1. Those scripts are not compatible activation steps for the current beta; use the tagged 2.1 release if needed. The old helper used privileged instrumentation to read protected HID reports and translate the Xiaomi’s old layout.
+`python3 scripts/test-policy.py` validates the recorded bounce timings, 800-ms boundary, disabled behavior, reset, fresh service start and clock boundaries. Android build/lint run for debug and release in CI. Physical wake/sleep and reboot behavior must also be tested; a pure timing test cannot establish OS/service behavior.
+
+Legacy documentation and tags remain separate; activation scripts in the current tree intentionally refuse to start the removed instrumentation helper.

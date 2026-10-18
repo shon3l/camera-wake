@@ -1,55 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <queries>
         <intent><action android:name="android.media.action.STILL_IMAGE_CAMERA" /></intent>
         <intent><action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE" /></intent>
     </queries>
-    <application
-        android:allowBackup="false"
-        android:label="Camera Wake Beta"
-        android:icon="@drawable/ic_camera_wake"
-        android:roundIcon="@drawable/ic_camera_wake"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar"
-        android:usesCleartextTraffic="false">
+    <application android:allowBackup="false" android:label="Camera Wake"
+        android:icon="@drawable/ic_camera_wake" android:roundIcon="@drawable/ic_camera_wake"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
-        <activity android:name=".VendorProbeActivity" android:exported="false" />
-        <activity android:name=".MotionProbeActivity" android:exported="false" />
-        <activity
-            android:name=".WakeCameraActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:noHistory="true" />
-        <service android:enabled="false"
-            android:name=".ButtonService"
-            android:label="Camera Wake — wake only"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/wake_service_config" />
-        </service>
-        <service android:enabled="true"
-            android:name=".MappingService"
-            android:label="Camera Wake Beta — remote controls"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
+        <service android:name=".WakeService" android:label="Camera Wake"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true">
+            <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config" />
         </service>
     </application>
-
 </manifest>
