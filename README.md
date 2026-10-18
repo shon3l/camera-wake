@@ -6,7 +6,7 @@ A free, open-source companion for the **TELESIN P4-WTP-06 diving phone case**. H
 
 ## Get started
 
-[Download the signed 3.0 release candidate](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc3) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
+[Download Camera Wake 3.0](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
 
 1. Use the official ReefColor app to update the case: the tested path is **V5.7 → V5.9**.
 2. **Forget TELESIN_SDC and pair again** in Android Bluetooth settings after updating. This loads the new control layout.
@@ -17,9 +17,9 @@ The app keeps the original realistic physical-button guide, with a compact under
 
 ## Compatibility and release status
 
-The verified hardware baseline is **Xiaomi 17 Ultra, Android 17 / HyperOS OS3.0.336.0.XPAEUXM**, stock Xiaomi Camera, P4-WTP-06 firmware V5.9 after fresh pairing. Beta 5 controls/transitions were physically confirmed; Beta 3.1 passed reboot + first PIN unlock + USB-unplugged testing. The polished 3.0 release candidate has a smaller permission surface and new application identity; its own physical/reboot acceptance is recorded in the [test matrix](docs/COMPATIBILITY.md).
+The verified hardware baseline is **Xiaomi 17 Ultra, Android 17 / HyperOS OS3.0.336.0.XPAEUXM**, stock Xiaomi Camera, P4-WTP-06 firmware V5.9 after fresh pairing. Beta 5 controls/transitions were physically confirmed; Beta 3.1 passed reboot + first PIN unlock + USB-unplugged testing. The public 3.0 app has a smaller permission surface and new application identity; its controls and wake/sleep were confirmed with Beta disabled. Its own reboot test was not repeated; see the [test matrix](docs/COMPATIBILITY.md).
 
-This is a release candidate until those checks pass. Other phones and firmware versions are unverified. [Limitations and technical behavior](docs/DETAILS.md).
+Other phones and firmware versions are unverified. [Limitations and technical behavior](docs/DETAILS.md).
 
 ## Upgrading from beta or 2.1
 
@@ -27,11 +27,11 @@ The public app is **Camera Wake** (`org.telesin.camerawake`). It installs separa
 
 Legacy [2.1](https://github.com/shon3l/camera-wake/releases/tag/v2.1.0) and [Beta 5](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-beta.5) remain available. Samsung was tested only with the legacy workflow, not this public app.
 
-## Demo
+## Screenshots
 
-[![Illustrative walkthrough — no phone footage](docs/demo/poster.png)](docs/demo/camera-wake-beta5-demo.mp4)
+Actual app screens, captured directly from app windows, excluding system status and navigation bars. No camera/gallery footage, notifications, account details or device identifiers are included.
 
-[Watch the privacy-safe video](docs/demo/camera-wake-beta5-demo.mp4). This animation illustrates the Beta 5 setup/control behavior shared by 3.0; it does not show the polished interface or a live phone test. No phone footage or personal data is used. [Transcript](docs/demo/README.md).
+<img src="docs/screenshots/camera-wake-3-main.png" alt="Camera Wake underwater main screen with physical-button guide" width="320"> <img src="docs/screenshots/camera-wake-3-setup.png" alt="Setup panel with labelled green and amber status indicators" width="320">
 
 ## Build, licensing and privacy
 

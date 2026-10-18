@@ -14,6 +14,6 @@ The wake switch, your manual firmware/pairing confirmation and most recent gener
 
 The current public app has no beta diagnostics or Share-report feature. Historical beta releases had broader diagnostic capabilities; their own documentation applies to those builds.
 
-## Demo and artwork
+## Screenshots and artwork
 
-The included walkthrough is generated animation, not a phone recording. It contains no personal images, device identifiers, notifications, audio or logs. The product reference image is attributed in THIRD_PARTY_NOTICES.md and is not a user photo. Local phone screenshots used for visual review are not uploaded with this release.
+Published screenshots show only Camera Wake’s own UI, with system status and navigation bars excluded. No camera preview, gallery, account details, notifications, device identifiers or private logs are published. The product reference image is attributed in THIRD_PARTY_NOTICES.md and is not a user photo. No demo video is distributed with 3.0.

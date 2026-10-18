@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.0 — public release
+
+- Free signed public release with the underwater single-screen interface and realistic rounded physical-button guide.
+- Beta 5 wake/sleep behavior retained; diagnostic tools and broad permissions removed.
+- Live setup status indicators and explicitly manual firmware confirmation.
+- Public-package controls/wake/sleep confirmed with Beta disabled. Reboot acceptance on the public package was not repeated; earlier Beta 3.1 reboot testing remains the established baseline.
+- App-only screenshots replace the illustrative video; video removed from current repository and release assets.
+
+
 ## 3.0.0-rc3 — underwater, one-screen layout
 
 - Navy/teal water-light backdrop with background-only blur and translucent blue panels.

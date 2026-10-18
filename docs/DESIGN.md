@@ -19,4 +19,4 @@ This is an original native Views implementation, not an imported UI kit or a cla
 - [Material Android button guidance](https://github.com/material-components/material-components-android/blob/master/docs/components/CommonButton.md): action shapes and states.
 - [Glass Ocean UI examples](https://zorc.se/en/ui-kits/glass-ocean): visual inspiration only; no assets or code copied.
 
-The original product-image attribution remains in THIRD_PARTY_NOTICES.md. Local phone screenshots are not published, to avoid sharing notification/status information.
+The original product-image attribution remains in THIRD_PARTY_NOTICES.md. Public screenshots contain only the app UI, with system status/navigation bars excluded to exclude personal information.
