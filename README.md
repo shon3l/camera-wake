@@ -6,7 +6,7 @@ A free, open-source companion for the **TELESIN P4-WTP-06 diving phone case**. H
 
 ## Get started
 
-[Download the signed 3.0 release candidate](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc1) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
+[Download the signed 3.0 release candidate](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc2) · [Firmware guide](docs/FIRMWARE.md) · [Full setup](docs/ACTIVATION.md)
 
 1. Use the official ReefColor app to update the case: the tested path is **V5.7 → V5.9**.
 2. **Forget TELESIN_SDC and pair again** in Android Bluetooth settings after updating. This loads the new control layout.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0-rc2 — visual refinement
+
+- Ocean-toned background and surfaces, pill buttons with pressed ripple states, camera icon, status chip and stronger switch states.
+- Preserve the full-size physical-button photo and compact setup layout.
+- Runtime unchanged from RC1.
+
 ## 3.0.0-rc1 — public release candidate
 
 - Compact light interface with the original realistic physical-button reference, larger photo and expandable setup.
@@ -8,7 +14,7 @@
 - Remove screen-content retrieval, gesture injection and Bluetooth permission.
 - Pause immediately cancels pending transitions; clearer setup status and generic errors.
 - Add wake-policy regression checks, public upgrade/privacy/release documentation.
-- Physical acceptance of the new service and reboot behavior remains pending.
+- User confirmed the new public service works with Beta disabled; reboot acceptance remains pending.
 
 
 ## 3.0 Beta 5 — 2026-10-18

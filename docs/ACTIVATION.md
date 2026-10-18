@@ -6,7 +6,7 @@ Follow [the tested V5.7 → V5.9 upgrade](FIRMWARE.md), then forget and re-pair 
 
 ## Install Camera Wake 3.0
 
-1. Download the signed release-candidate APK from [GitHub Releases](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc1). Android may ask to allow installations from your browser/file manager.
+1. Download the signed release-candidate APK from [GitHub Releases](https://github.com/shon3l/camera-wake/releases/tag/v3.0.0-rc2). Android may ask to allow installations from your browser/file manager.
 2. Open **Camera Wake** → **Setup & firmware** → **Enable Accessibility**. Read the explanation, then enable **Camera Wake** in Android’s accessibility services.
 3. If Android blocks a sideloaded service, open Settings → Apps → Camera Wake → menu → **Allow restricted settings**, then return to Accessibility. These are user-consented settings, not ADB activation.
 4. Allow **unrestricted battery use**. On Xiaomi enable autostart/background activity/pop-up permissions if offered. The button opens app settings; labels differ by OS.
