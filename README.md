@@ -4,9 +4,9 @@ A free, open-source companion for the **TELESIN P4-WTP-06 diving phone case**. H
 
 **No ADB activation, root, account, ads or tracking.**
 
-<img src="app/src/main/res/drawable/controller_reference.webp" alt="TELESIN P4-WTP-06 diving phone case showing Capture, M1, M2, W and T physical buttons" width="420">
+<img src="docs/images/telesin-p4-wtp-06-case.png" alt="Complete TELESIN P4-WTP-06 underwater phone case, showing the grip, sealed housing and camera window" width="600">
 
-*TELESIN P4-WTP-06 case and physical controls. Product reference photo from Kareem Stores; [source and artwork attribution](THIRD_PARTY_NOTICES.md).*
+*The TELESIN P4-WTP-06 underwater phone case. [Official product page](https://www.telesinstore.com/products/telesin-underwater-diving-phone-case) · [Image attribution](THIRD_PARTY_NOTICES.md).*
 
 ## Get started
 
